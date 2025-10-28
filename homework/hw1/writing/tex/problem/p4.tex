@@ -1,0 +1,110 @@
+\begin{homeworkProblem}
+
+4. [15pts] Training a Convolutional Neural Network (CNN) on EuroSAT for Image Classification
+
+In this assignment, you will train a deep learning model from scratch for EuroSAT dataset classification. EuroSAT is a dataset of 27,000 RGB satellite images ($64\times 64$ pixels) across 10 land cover classes, derived from Sentinel-2 satellite data for remote sensing classification tasks.
+
+You are required to complete the following code by \textbf{filling in your own architecture and training function}. In the sections that specify \textbf{``To be implemented by students''}, you should replace pass with your own implementation.
+
+After completing the implementation, answer the following questions and submit a report in Markdown/PDF format.
+
+\begin{itemize}
+    \item Estimate the number of parameters and the feature map sizes at each layer.
+    \item Report training accuracy and loss over epoches and the testing accuracy on test data.
+    \item Compare training and test error with and without Batch Normalization and Dropout layers.
+    \item Please also submit the Jupyter Notebook (.ipynb) with your complete, executable code.(You can just edit on this notebook file.)
+\end{itemize}
+
+\textcolor{blue}{Solution}
+
+The implementation code are in \texttt{hw1\_coding.ipynb}.
+
+(1) Figure \ref{fig:architecture} shows the architecture of the CNN model used for EuroSAT classification. The model's architecture is summarized as follows:
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Layer} & \textbf{Output Size} \\
+\midrule
+Input & $3 \times 64 \times 64$ \\
+Conv(3$\rightarrow$32) & $32 \times 64 \times 64$ \\
+MaxPool2 & $32 \times 32 \times 32$ \\
+Conv(32$\rightarrow$64) & $64 \times 32 \times 32$ \\
+MaxPool2 & $64 \times 16 \times 16$ \\
+Conv(64$\rightarrow$128) & $128 \times 16 \times 16$ \\
+MaxPool2 & $128 \times 8 \times 8$ \\
+Conv(128$\rightarrow$256) & $256 \times 8 \times 8$ \\
+MaxPool2 & $256 \times 4 \times 4$ \\
+Conv(256$\rightarrow$512) & $512 \times 4 \times 4$ \\
+MaxPool2 & $512 \times 2 \times 2$ \\
+Flatten & $2048$ \\
+FC(2048$\rightarrow$256) & $256$ \\
+FC(256$\rightarrow$10) & $10$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+With the methods mentioned in Problem 3, we could calculate the number of trainable parameters of the convolutional layers and the fully connected layers.
+
+However, there have a small difference when considering applying Batch Normalization, it additionally add trainable parameters $\gamma$ and $\beta$ for each output channel, while the bias term in convolutional layers are removed.
+
+So for the convolutional layers with input size $(C_{in}, H, W)$, output size $(C_{out}, H, W)$, kernel size $k \times k$, the number of trainable parameters is $C_{out} \times (C_{in} \times k \times k) + C_{out}$ without Batch Normalization, and $C_{out} \times (C_{in} \times k \times k) + 2 \times C_{out}$ with Batch Normalization.
+
+For the fully connected layers, the number of trainable parameters with input size $N_{in}$ and output size $N_{out}$ is always $N_{out} \times N_{in} + N_{out}$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{./Img/architecture.png}
+    \caption{The architecture of the CNN model}
+    \label{fig:architecture}
+\end{figure}
+
+So the number of trainable parameters could be calculated as follows:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{Params(without BN)} & \textbf{Params(with BN)} \\
+\midrule
+Conv $3\rightarrow 32$    & $32 \times (3\times 3\times 3)    + 32  = 896$       & $32 \times (3\times 3\times 3)    + 2\times 32  = 928$       \\
+Conv $32\rightarrow 64$   & $64 \times (32\times 3\times 3)   + 64  = 18,496$    & $64 \times (32\times 3\times 3)   + 2\times 64  = 18,560$    \\
+Conv $64\rightarrow 128$  & $128 \times (64\times 3\times 3)  + 128 = 73,856$    & $128 \times (64\times 3\times 3)  + 2\times 128 = 73,984$    \\
+Conv $128\rightarrow 256$ & $256 \times (128\times 3\times 3) + 256 = 295,168$   & $256 \times (128\times 3\times 3) + 2\times 256 = 295,424$   \\
+Conv $256\rightarrow 512$ & $512 \times (256\times 3\times 3) + 512 = 1,180,160$ & $512 \times (256\times 3\times 3) + 2\times 512 = 1,180,672$ \\
+\midrule
+FC $2048\rightarrow 256$ & $2048\times 256 + 256 = 524,544$ & $2048\times 256 + 256 = 524,544$ \\
+FC $256\rightarrow 10$ & $256\times 10 + 10 = 2,570$ & $256\times 10 + 10 = 2,570$ \\
+\midrule
+\textbf{Total Parameters} & \textbf{2,095,690} & \textbf{2,096,682} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+So above all, the network without Batch Normalization has $2,095,690$ trainable parameters, while the one with Batch Normalization has $2,096,682$ trainable parameters.
+
+(2) The training accuracy and loss over epoches and the testing accuracy on test data could be found in \texttt{hw1\_coding.ipynb} part 4 and part 5.
+
+(3) The training and test error with and without Batch Normalization and Dropout layers are in the following table \ref{table:bn_dropout_error}. Specifically, batch normalization are added after each convolutional layer, and the bias term in convolutional layers are removed when using batch normalization. Dropout with $p=0.05$ is applied after the first fully connected layer and every convolutional block.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{c c c c c c}
+        \toprule
+        Batch Normalization & Dropout & Train Acc (\%) & Train Error (\%) & Test Acc (\%) & Test Error (\%) \\
+        \midrule
+        without & without & \textbf{95.48} & \textbf{4.52} & 90.91 & 9.09 \\
+        with    & without & 94.88 & 5.12 & 92.83 & 7.17 \\
+        without & with    & 93.19 & 6.81 & 91.69 & 8.31 \\
+        with    & with    & 92.62 & 7.38 & \textbf{93.13} & \textbf{6.87} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Comparison of training and test performance with and without Batch Normalization and Dropout layers.}
+    \label{table:bn_dropout_error}
+\end{table}
+
+We observe that applying Batch Normalization improves test performance by reducing generalization error. And a small of Dropout($p = 0.05$) provides additional regularization, further improving test accuracy.
+
+The best result is achieved with applying both Batch Normalization and Dropout, although it sacrifices some training accuracy, it achieves the lowest test error.
+
+\end{homeworkProblem}
+
+\newpage

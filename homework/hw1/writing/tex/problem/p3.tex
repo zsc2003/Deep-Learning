@@ -1,0 +1,37 @@
+\begin{homeworkProblem}
+
+3. Neural Network Architectures
+
+(1) [3pts] Derive the number of trainable parameters in a single convolutional layer with input size $H \times W \times C_{\mathrm{in}}$, kernel size $k \times k$, and $C_{\mathrm{out}}$ output channels (assume bias), and compare it with a fully connected (dense) layer of the same input and output size.
+
+(2) [2pts] Explain why positional information is necessary in Transformers and describe one method to inject positional information.
+
+\textcolor{blue}{Solution}
+
+(1) 1. For the convolutional layer: since the input size is $H \times W$ with $C_{\mathrm{in}}$ channels, and the output has $C_{\mathrm{out}}$ channels, we could get that the size of each kernel is $k \times k \times C_{\mathrm{in}}$, and there are $C_{\mathrm{out}}$ such kernels.
+
+Also, since the channels are biased, thus for each kernel, a parameter as the bias is needed. So the total number of parameters is
+$$(k^2 C_{\mathrm{in}} + 1) \cdot C_{\mathrm{out}} = k^2 C_{\mathrm{in}}C_{\mathrm{out}} + C_{\mathrm{out}}$$
+
+
+2. For a fully connected (dense) layer with the same input and output size, the number of the neurals of the input layer is
+$$N_{\mathrm{in}} = HW C_{\mathrm{in}}$$
+and the number of the neurals of the output layer is
+$$N_{\mathrm{out}} = HW C_{\mathrm{out}}$$
+And since its a fully connected layer, each neural in the output layer is connected to all the neurals in the input layer, with an additional bias term for each output neural. Thus, the total number of trainable parameters is
+$$(N_{\mathrm{in}}+1) \cdot N_{\mathrm{out}} = H^2W^2 C_{\mathrm{in}} C_{\mathrm{out}} + HW C_{\mathrm{out}}$$
+
+Since the convolution layer could be regarded as shareing weights, it has much less parameters than the fully connected layer, especially when $k \ll H, W$.
+
+(2) In the Transformer architecture, positional information is necessary because the attention mechanism is inherently permutation-equivariant. Without positional encoding, the model would get only a bag of tokens and cannot distinguish between different orderings of the same set of words. Thus it is impossible for the model to capture sequence order or relative distances, which would greatly decrease its ability to understand context and meaning in sequential data.
+
+A common method to incorporate positional information is sinusoidal positional encoding. Given a position $pos$ and dimension index $i$, with model dimension $d$, the positional encoding(PE) is defined as
+$$PE_{(pos, 2i)} = \sin\left(\dfrac{pos}{10000^{\frac{2i}{d}}}\right), \quad PE_{(pos, 2i+1)} = \cos\left(\dfrac{pos}{10000^{\frac{2i}{d}}}\right)$$
+The positional encoding is then added elementwise to the token embedding, which means that for the tokens in the position $pos$, its input to the model(the 0-th layer) is
+$$x^{(0)}_{pos} = \text{Embed}(token_{pos}) + PE(pos)$$
+
+With such positional encodings, the model can learn to attend to tokens based on their positions in the sequence without introducing additional parameters. And modern methods such as rotary positional encodings (RoPE)\footnote{https://arxiv.org/abs/2104.09864} is also widely used, which encodes relative positional information by rotating the query and key vectors in multi-head attention instead of adding positional encodings to the token embeddings.
+
+\end{homeworkProblem}
+
+\newpage

@@ -1,0 +1,22 @@
+\begin{homeworkProblem}
+
+2. [3pts] Prove the shift invariant property of convolution:
+$$\mathcal{G}(f(\cdot-a))(x)=\mathcal{G}(f(\cdot))(x-a),$$
+where $\mathcal{G}$ is the convolutional operator $\mathcal{G}(f(\cdot))=\displaystyle\int_{-\infty}^{+\infty} f(\tau)h(x-\tau)\dtau$
+
+\textcolor{blue}{Solution}
+
+From the definition of convolution, we can get that
+\begin{align*}
+\mathcal{G}(f(\cdot - a))(x) &= \int_{-\infty}^{+\infty} f(\tau-a) h(x-\tau) \dtau \\
+\text{(Let $t=\tau-a$)}\quad &= \int_{-\infty}^{+\infty} f(t) h(x-(t+a)) \dt \\
+&= \int_{-\infty}^{+\infty} f(t) h((x-a)-t) \dt \\
+&= \mathcal{G}(f(\cdot))(x - a)
+\end{align*}
+
+So above all, we have proved that the shift invariant property of convolution
+$$\mathcal{G}(f(\cdot-a))(x)=\mathcal{G}(f(\cdot))(x-a)$$
+
+\end{homeworkProblem}
+
+\newpage

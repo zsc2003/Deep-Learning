@@ -1,0 +1,28 @@
+\begin{homeworkProblem}
+
+1. [2pts] Consider a sequence of values $\{x_1, x_2,\ldots, x_n\}$ of some variable x, and suppose we compute an exponentially weighted moving average using the formula $\mu_n =\beta \mu_{n-1}+(1-\beta)x_n$, where $0<\beta<1$. By making use of the following result for the sum of a finite geometric series
+$$\sum_{k=1}^n \beta^{k-1} = \dfrac{1-\beta^n}{1-\beta}$$
+show that if the sequence of averages is initialized using $\mu_0 = 0$, then the estimators are biased and that the bias can be corrected using
+$$\hat{\mu}_n=\dfrac{\mu_n}{1-\beta^n}$$
+
+\textcolor{blue}{Solution}
+
+Unrolling the recurrence geometric series for $\mu_n$, we can get that
+$$\mu_n = (1-\beta) \sum_{i=1}^{n} \beta^{n-i} x_i$$
+Consider the sum of the weights assigned to each $x_i$ in this expression: each $x_i$ is weighted by $(1-\beta)\beta^{n-i}$. Thus the total weight is
+$$\sum_{i=1}^{n} (1-\beta)\beta^{n-i} = (1-\beta) \sum_{k=0}^{n-1} \beta^k = (1-\beta)\cdot\dfrac{1-\beta^n}{1-\beta}= 1-\beta^n$$
+Since $1-\beta^n < 1$, the computed $\mu_n$ is not a properly normalized weighted average, thus results to a bias.
+
+To remove this bias, we need to normalize the weights by dividing $\mu_n$ by the total weight $1-\beta^n$. This does not change the relative weights between data points, but rescales the weightsto sum to 1. Which means we can correct the bias by letting
+$$\hat{\mu}_n = \sum_{i=1}^{n} \dfrac{(1-\beta)\beta^{n-i}}{1-\beta^n} x_i = \dfrac{\mu_n}{1-\beta^n}$$
+
+Also, we can consider this in the probabilistic way. Suppose that the $x_i$ are drawn from a distribution with mean $\mu$. Then, taking the expectation of $\mu_n$, we have
+$$\E[\mu_n] = (1-\beta) \sum_{i=1}^{n} \beta^{n-i} \E[x_i] = (1-\beta) \sum_{i=1}^{n} \beta^{n-i} \mu = \mu (1-\beta) \sum_{k=0}^{n-1} \beta^k = \mu (1-\beta^n) \neq \mu$$
+Which shows that $\mu_n$ is a biased estimator of $\mu$, which could also be corrected by dividing by $1-\beta^n$, which is the same result as above.
+
+So above all, we have proved that the estimators are biased and that the bias can be corrected using
+$$\hat{\mu}_n=\dfrac{\mu_n}{1-\beta^n}$$
+
+\end{homeworkProblem}
+
+\newpage

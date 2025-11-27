@@ -1,0 +1,47 @@
+\begin{homeworkProblem}
+
+3. Large Language Models.
+
+LLMs model a joint distribution over a sequence $ x_1, \ldots, x_T $ by factorizing it into conditional distributions
+$$ p(x_1,\ldots,x_T)=\prod_{t=1}^T p(x_t \mid x_{<t}),$$
+and learning these conditionals through next-token prediction.
+
+Answer the following:
+\begin{itemize}
+    \item How is next-token prediction implemented in practice using a Transformer decoder? (1 pts)
+    \item Identify the training setup:including the input,output and traning objective. (2 pts)
+    \item What is the difference between sampling during training and inference? Why? (2 pts)
+\end{itemize}
+
+\textcolor{blue}{Solution}
+
+(a) In a Transformer decoder, next-token prediction proceeds as: given tokens $x_1,\ldots,x_T$, embed them and add positional encodings to get the embedding:
+$$e_t = \mathrm{Embed}(x_t) + \mathrm{PosEnc}(t)$$
+These are processed by masked self-attention, where the causal mask enforces $t$ attends only to $\{1,\ldots,t\}$. So the decoder produces hidden states
+$$h_t = \mathrm{DecoderLayer}(e_{\leq t})$$
+and the next-token distribution is calculated through a shared linear layer and then softmax:
+$$p_\theta(x_{t}\mid x_{< t}) = \mathrm{softmax}(Wh_t + b)$$
+Where $h_t$ is the hidden state for the decoder, depend only on $x_{<t}$ through causal mask. During inference, this distribution is used to choose or sample the next token.
+
+
+
+(b) The model receives an input sequence that is shifted right by one position (e.g., $(x_0, x_1, \ldots, x_{T-1})$), where $x_0$ may contain a BOS or a padding token depending on implementation. And the target output is $(x_1,\ldots,x_T)$.
+
+At each time step the model outputs $p_\theta(\cdot\mid x_{<t})$ and compares it to target token $x_t$. This uses teacher forcing, that is, the model is trained to predict the next token given the previous ones, instead of the truly predicted token. This makes the model more stable and could train parallelly.
+
+The objective is to maximize log-likelihood
+$$\max_\theta\ \sum_{t=1}^T \log p_\theta(x_t\mid x_{<t}) \quad\Leftrightarrow\quad \mathcal{L}(\theta)= -\sum_{t=1}^{T} \log p_\theta(x_t\mid x_{<t})$$
+
+
+
+(c) During training, the model does not sample tokens; it always conditions on the ground-truth previous tokens (teacher forcing), which provides the true prefix $x_{<t}$, and the model's distribution is only used to compute
+$$-\log p_\theta(x_t \mid x_{<t})$$
+During inference, the true next token is unavailable, so the model must choose or sample from the network's forward distribution:
+$$x_{t} \sim p_\theta(\cdot\mid x_{< t}) \quad\text{or}\quad x_{t} = \argmax p_\theta(\cdot\mid x_{< t})$$
+and the generated token becomes the next input.
+
+The key difference is that training requires differentiable likelihood optimization, while inference must convert probability distributions into actual tokens.
+
+\end{homeworkProblem}
+
+\newpage

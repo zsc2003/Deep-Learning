@@ -1,0 +1,120 @@
+\begin{homeworkProblem}
+
+2. Instantaneous Change of Variables.
+
+Derive the Instantaneous Change of Variables formula:
+$$ \frac{\mathrm{d}}{\dt} \log p(\mathbf{z}(t)) = -\tr\left( \frac{\mathrm{d} f}{\mathrm{d} \mathbf{z}(t)} \right),$$
+where the dynamics are given by
+$$\frac{\dbz(t)}{\dt} = f(\mathbf{z}(t), t),$$
+
+and the function $f$ is assumed to be uniformly Lipschitz continuous in $\mathbf{z}$ and continuous in $t$. Provide at least \textbf{two ways} to prove it. (4 points)
+
+Hints:
+\begin{itemize}
+    \item Hint 1: Consider the time limit of the discrete change-of-variables formula.
+    \item Hint 2: You may utilize the Fokker-Planck equation in the deterministic case.
+    \item Hint 3: You may introduce a smooth test function to rigorously justify the derivation
+\end{itemize}
+
+\textcolor{blue}{Solution}
+
+<1>. Method 1: Consider the time limit of the discrete change-of-variables formula:
+
+For a fixed time $t$, consider a sufficiently small time step $\epsilon>0, \epsilon\to 0$. Then we can use the Taylor expansion of $\mathbf{z}(t)$ at time $t$:
+$$\mathbf{z}(t+\epsilon) = \mathbf{z}(t) + \epsilon\frac{\dbz(t)}{\dt} + O(\epsilon^2) = \mathbf{z}(t) + \epsilon f(\mathbf{z}(t),t) + O(\epsilon^2)$$
+i.e. for each $\mathbf{z}\in\mathbb{R}^d$ we can define the mapping
+$$g_{\epsilon}(\mathbf{z}) = \mathbf{z} + \epsilon f(\mathbf{z},t) + O(\epsilon^2)$$
+
+Let $p_t(\mathbf{z})$ and $p_{t+\epsilon}(\mathbf{z})$ be the densities of $\mathbf{z}(t)$ and $\mathbf{z}(t+\epsilon)$, respectively. During the time interval of length $\epsilon$, the random variable $\mathbf{z}(t)$ is approximately mapped into $\mathbf{z}(t+\epsilon)$ by $g_{\epsilon}$. For any $\mathbf{z}'\in\mathbb{R}^d$, we can define that $\mathbf{z}=g_{\epsilon}^{-1}(\mathbf{z}')$, i.e. $g_{\epsilon}(\mathbf{z})=\mathbf{z}'$. Since $g_{\epsilon}$ is invertible and differentiable, the discrete change of variables formula is
+$$p_{t+\epsilon}(\mathbf{z}') = p_t(\mathbf{z}) \left|\det\frac{\partial \mathbf{z}}{\partial \mathbf{z}'}\right|$$
+where $\frac{\partial \mathbf{z}}{\partial \mathbf{z}'}$ is the Jacobian matrix of the inverse mapping $g_{\epsilon}^{-1}$ at the point $\mathbf{z}'$. From the definition of $g_{\epsilon}$ and $\mathbf{z}'$:
+$$g_{\epsilon}(\mathbf{z}) = \mathbf{z} + \epsilon f(\mathbf{z},t) + O(\epsilon^2),\quad \mathbf{z}=g_{\epsilon}^{-1}(\mathbf{z}')\Leftrightarrow g_{\epsilon}(\mathbf{z})=\mathbf{z}'$$
+we can get that
+$$\frac{\partial \mathbf{z}'}{\partial \mathbf{z}} = \frac{\partial g_{\epsilon}(\mathbf{z})}{\partial \mathbf{z}}= I + \epsilon\frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t) + O(\epsilon^2)$$
+where $I$ is the $d\times d$ identity matrix. As $\epsilon\to 0$, we could say that the Jacobian matrix is a small perturbation of $I$, which means the Jacobian matrix is invertible. Combined with the condition that $f$ is uniformly Lipschitz continuous in $\mathbf{z}$ and continuous in $t$, we can say that Inverse Function Theorem holds.
+
+From the theorem in matrix, we can get that
+$$\partial (\det X) = \det(X)\tr(X^{-1}\partial X)$$
+
+Thus we can use Taylor expansion of the determinant $\det\left(I+\epsilon \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t)\right)$ at $I$:
+$$\det\left(I+\epsilon \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t)\right) = \det(I) + \tr\left(I^{-1}\epsilon \frac{\partial f}{\partial\mathbf{z}}\right)\cdot\det(I) + O\left(\left\|\epsilon \frac{\partial f}{\partial\mathbf{z}}\right\|^2\right) = 1 + \epsilon \tr \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t) + O(\epsilon^2)$$
+Thus using $(1+x)^{-1} = 1 - x + O(x^2)$, we can get that
+$$\left|\det\frac{\partial \mathbf{z}}{\partial \mathbf{z}'}\right| = \det\left(I+\epsilon \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t) + O(\epsilon^2)\right)^{-1} = 1 - \epsilon \tr \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t) + O(\epsilon^2)$$
+
+Again, from the Taylor expansion of $g_{\epsilon}$ mentioned above, and $\epsilon\to 0$, we have
+$$\mathbf{z}' = g_{\epsilon}(\mathbf{z}) = \mathbf{z} + \epsilon f(\mathbf{z},t) + O(\epsilon^2),\quad \mathbf{z} = g_{\epsilon}^{-1}(\mathbf{z}') = \mathbf{z}' - \epsilon f(\mathbf{z}',t) + O(\epsilon^2)$$
+From the smoothness on $p_t$ and $\frac{\partial f}{\partial\mathbf{z}}$, apply Taylor expansion to them at $\mathbf{z}'$, we can get that
+$$p_t(\mathbf{z}) = p_t(\mathbf{z}' - \epsilon f(\mathbf{z}',t) + O(\epsilon^2)) = p_t(\mathbf{z}') - \epsilon f(\mathbf{z}',t)\cdot\nabla p_t(\mathbf{z}') + O(\epsilon^2),\qquad \tr \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t) = \tr  \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z}',t) + O(\epsilon)$$
+Put these expansions altogether into the change of variables formula, we can get that
+\begin{align*}
+p_{t+\epsilon}(\mathbf{z}') &= p_t(\mathbf{z}) \left|\det\frac{\partial \mathbf{z}}{\partial \mathbf{z}'}\right| \\
+&= p_t(\mathbf{z}) \left(1 - \epsilon \tr \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t) + O(\epsilon^2)\right) \\
+&= \left(p_t(\mathbf{z}') - \epsilon f(\mathbf{z}',t)\cdot\nabla p_t(\mathbf{z}') + O(\epsilon^2)\right) \left(1 - \epsilon \left(\tr \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z}',t) + O(\epsilon)\right) + O(\epsilon^2)\right) \\
+&= p_t(\mathbf{z}') - \epsilon f(\mathbf{z}',t)\cdot\nabla p_t(\mathbf{z}') - \epsilon p_t(\mathbf{z}') \tr \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z}',t) + O(\epsilon^2)
+\end{align*}
+Divide $\epsilon$ to the both side, and setting $\epsilon\to 0$, we get
+\begin{align*}
+\lim_{\epsilon\to 0}\frac{p_{t+\epsilon}(\mathbf{z}')-p_t(\mathbf{z}')}{\epsilon} &= \lim_{\epsilon\to 0}\left(-f(\mathbf{z}',t)\cdot\nabla p_t(\mathbf{z}') - p_t(\mathbf{z}') \tr \frac{\partial f}{\partial\mathbf{z}}(\mathbf{z}',t)+O(\epsilon)\right) \\
+\Rightarrow\quad \partial_t p_t(\mathbf{z}) &= -f(\mathbf{z},t)\cdot\nabla p_t(\mathbf{z}) - p_t(\mathbf{z}) \tr \left(\frac{\partial f}{\partial\mathbf{z}}(\mathbf{z},t)\right)
+\end{align*}
+
+Then apply the chain rule, we can get that
+\begin{align*}
+\frac{\mathrm{d}}{\mathrm{d}t}\log p_t(\mathbf{z}(t)) &= \partial_t \log p_t(\mathbf{z}(t)) + \frac{\partial \left(\log p_t(\mathbf{z}(t))\right)}{\partial \mathbf{z}(t)}\cdot \frac{\mathrm{d} \mathbf{z}(t)}{\dt} \\
+&= \dfrac{\partial_t p_t(\mathbf{z}(t))}{p_t(\mathbf{z}(t))} + \frac{1}{p_t(\mathbf{z}(t))}\cdot \frac{\partial p_t(\mathbf{z}(t))}{\partial \mathbf{z}(t)}\cdot f(\mathbf{z}(t),t) \\
+&= -\frac{1}{p_t(\mathbf{z}(t))}\cdot f(\mathbf{z}(t),t)\cdot\nabla p_t(\mathbf{z}(t)) - \tr \left(\frac{\partial f}{\partial\mathbf{z}(t)}(\mathbf{z}(t),t)\right) + \frac{1}{p_t(\mathbf{z}(t))}\cdot \nabla p_t(\mathbf{z}(t))\cdot f(\mathbf{z}(t),t) \\
+&= -\tr \left(\frac{\partial f}{\partial\mathbf{z}(t)}(\mathbf{z}(t),t)\right)
+\end{align*}
+
+So above all, we have proved that
+$$\frac{\mathrm{d}}{\mathrm{d}t}\log p_t(\mathbf{z}(t)) = -\tr \left(\frac{\partial f}{\partial\mathbf{z}(t)}(\mathbf{z}(t),t)\right)$$
+
+
+
+<2>. Method 2:  Using the smooth test function.
+
+To show that the density $p_t(\mathbf{z})$ satisfies
+$$\partial_t p_t(\mathbf{z}) + \nabla_{\mathbf{z}}\cdot\left(p_t(\mathbf{z}) f(\mathbf{z},t)\right)=0$$
+we can take a smooth test function $\phi(\mathbf{z})$: assume that $\phi(\mathbf{z})p_t(\mathbf{z})f(\mathbf{z},t)\to 0$ as $\|\mathbf{z}\|\to\infty$.
+
+Then we have
+$$\int_{\mathbb{R}^d}\phi(\mathbf{z})p_t(\mathbf{z}) \dbz =
+\E_{p_t}[\phi(\mathbf{z})]$$
+Differentiating both sides with respect to $t$ and using the chain rule together with $\dot{\mathbf{z}}(t) = f(\mathbf{z}(t),t)$, we can get that
+\begin{align*}
+\dfrac{\mathrm{d}}{\dt}\int_{\mathbb{R}^d}\phi(\mathbf{z})p_t(\mathbf{z}) \dbz &= \int_{\mathbb{R}^d}\phi(\mathbf{z}) \partial_t p_t(\mathbf{z}) \dbz \\
+\frac{\mathrm{d}}{\dt}\E_{p_t}[\phi(\mathbf{z})] &= \E_{p_t}[\nabla_{\mathbf{z}}\phi(\mathbf{z})\cdot f(\mathbf{z}, t)] = \int \nabla_{\mathbf{z}}\phi(\mathbf{z})\cdot f(\mathbf{z},t) p_t(\mathbf{z}) \dbz \\
+\Rightarrow\quad \int \phi(\mathbf{z}) \partial_t p_t(\mathbf{z}) \dbz &= \int \nabla_{\mathbf{z}}\phi(\mathbf{z})\cdot f(\mathbf{z},t) p_t(\mathbf{z}) \dbz
+\end{align*}
+
+Applying integration by parts(the divergence theorem) to the right-hand side and using the assumption mentioned at the beginning of the method: $\phi(\mathbf{z})p_t(\mathbf{z})f(\mathbf{z},t)\to 0$ as $\|\mathbf{z}\|\to\infty$. We can get that
+$$\int_{\mathbb{R}^d}\nabla_{\mathbf{z}}\phi(\mathbf{z})\cdot f(\mathbf{z},t) p_t(\mathbf{z}) \dbz = -\int_{\mathbb{R}^d}\phi(\mathbf{z}) \nabla_{\mathbf{z}}\cdot\left(p_t(\mathbf{z})f(\mathbf{z},t)\right) \dbz$$
+
+Thus we have for all smooth test function $\phi$ with $\phi(\mathbf{z})p_t(\mathbf{z})f(\mathbf{z},t)\to 0$ as $\|\mathbf{z}\|\to\infty$:
+$$\int \phi(\mathbf{z}) \partial_t p_t(\mathbf{z}) \dbz = -\int_{\mathbb{R}^d}\phi(\mathbf{z}) \nabla_{\mathbf{z}}\cdot\left(p_t(\mathbf{z})f(\mathbf{z},t)\right) \dbz \quad\Rightarrow\quad \int_{\mathbb{R}^d}\phi(\mathbf{z}) \left(\partial_t p_t(\mathbf{z}) + \nabla_{\mathbf{z}}\cdot\left(p_t(\mathbf{z})f(\mathbf{z},t)\right)\right)\dbz = 0$$
+Thus we have almost everywhere in $\mathbf{z}$:
+$$\partial_t p_t(\mathbf{z}) + \nabla_{\mathbf{z}}\cdot\left(p_t(\mathbf{z})f(\mathbf{z},t)\right) = 0$$
+
+Then expand the divergence term, where $\nabla_{\mathbf{z}}\cdot f(\mathbf{z},t) = \sum\limits_{i=1}^d\dfrac{\partial f_i}{\partial z_i}(\mathbf{z},t)$:
+$$\nabla_{\mathbf{z}}\cdot(p_t(\mathbf{z}) f(\mathbf{z}, t)) = \nabla_{\mathbf{z}}p_t(\mathbf{z})\cdot f(\mathbf{z},t) + p_t(\mathbf{z}) \nabla_{\mathbf{z}}\cdot f(\mathbf{z},t)$$
+Put it back into the original equation:
+$$\partial_t p_t(\mathbf{z}) + f(\mathbf{z},t)\cdot\nabla_{\mathbf{z}}p_t(\mathbf{z}) + p_t(\mathbf{z}) \nabla_{\mathbf{z}}\cdot f(\mathbf{z},t) = 0$$
+
+Using the chain rule, $\dot{\mathbf{z}}(t)=f(\mathbf{z}(t),t)$, and the equation above, we can get that
+\begin{align*}
+\frac{\mathrm{d}}{\dt}p_t(\mathbf{z}(t)) &= \partial_t p_t(\mathbf{z}(t)) + \nabla_{\mathbf{z}}p_t(\mathbf{z}(t))\cdot\dot{\mathbf{z}}(t) \\
+&= \partial_t p_t(\mathbf{z}(t)) + f(\mathbf{z}(t),t)\cdot \nabla_{\mathbf{z}}p_t(\mathbf{z}(t)) \\
+&= -p_t(\mathbf{z}(t)) \nabla_{\mathbf{z}}\cdot f(\mathbf{z}(t),t) \\
+\Rightarrow\qquad\ \ \dfrac{\frac{\mathrm{d}}{\dt}p_t(\mathbf{z}(t))}{p_t(\mathbf{z}(t))} &= -\nabla_{\mathbf{z}}\cdot f(\mathbf{z}(t),t) \\
+\Rightarrow\quad \frac{\mathrm{d}}{\dt}\log p_t(\mathbf{z}(t)) &= -\nabla_{\mathbf{z}}\cdot f(\mathbf{z}(t),t)
+\end{align*}
+
+Finally, using the relation between divergence and the trace of the Jacobian,
+$$\nabla_{\mathbf{z}}\cdot f(\mathbf{z}(t),t) = \sum_{i=1}^d\dfrac{\partial f_i}{\partial z_i}(\mathbf{z}(t),t) = \sum_{i=1}^d \left(\dfrac{\partial f}{\partial z}(\mathbf{z}(t),t)\right)_{ii} = \tr \left(\frac{\partial f}{\partial \mathbf{z}}(\mathbf{z}(t),t)\right)$$
+
+So above all, we have proved that
+$$\frac{\mathrm{d}}{\dt}\log p_t(\mathbf{z}(t)) = -\tr \left(\frac{\partial f}{\partial\mathbf{z}(t)}(\mathbf{z}(t),t)\right)$$
+
+\end{homeworkProblem}
+
+\newpage

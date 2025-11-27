@@ -1,0 +1,62 @@
+\begin{homeworkProblem}
+
+1. 3D Reconstuction.
+
+Describe the NeRF (Neural Radiance Fields) algorithm by answering the following three points clearly and concisely (3 points):
+\begin{itemize}
+    \item What are the inputs and outputs of NeRF?
+    \item What is the training loss? How to compute the gradient?
+    \item What training data does NeRF require?
+\end{itemize}
+
+\textcolor{blue}{Solution}
+
+(a) In the original NeRF paper, a static 3D scene is represented by an implicit continuous function
+$$F_\Theta : (x, y, z, \theta, \phi) \mapsto (\mathbf{c}, \sigma)$$
+where $\Theta$ denotes the network parameters, $(x,y,z)$ is the 3D coordinate of a point in space, and $(\theta,\phi)$ are two angles that parameterize the viewing direction.
+
+The corresponding output is a 4-dimensional vector $(r, g, b, \sigma)$, where $(r,g,b)$ is the RGB color $\mathbf{c}$ observed from direction $(\theta,\phi)$ at the point $(x, y, z)$, and $\sigma \geq 0$ is the volume density at that point, which controls how strongly the light is absorbed there.
+
+
+
+(b) Consider a ray that originates from a camera:
+$$\mathbf{r}(t) = \mathbf{o} + t\mathbf{d},\quad t\in[t_n,t_f]$$
+where $\mathbf{o}$ is the camera center, $\mathbf{d}$ is the unit direction for a given pixel, which could be computed through $(\theta, \phi)$ and $[t_n,t_f]$ is the near-to-far depth range. We sample $N$ depths $t_1,\ldots,t_N$ within this interval, then we can get the 3D sample points $\mathbf{x}_i = \mathbf{r}(t_i) = \mathbf{o} + t_i\mathbf{d}$, where the spacing is $\delta_i = t_{i+1}-t_i$.
+
+For each sample point $\mathbf{x}_i$, with the ray direction encoded as the two angles $(\theta,\phi)$, run the network's forward process to get
+$$(\mathbf{c}_i,\sigma_i) = F_\Theta(\mathbf{x}_i, \theta, \phi)$$
+
+Then use the discrete volume rendering equation to calculate the predicted color of the corresponding pixel by letting the alpha value at the $i$-th segment $\alpha_i = 1 - \exp(-\sigma_i \delta_i)$ and the accumulated transmittance $
+T_i = \exp\left(-\sum\limits_{j=1}^{i-1}\sigma_j\delta_j\right)$. Thus predicted color of the pixel is
+$$\hat{\mathbf{C}}(\mathbf{r}) = \sum_{i=1}^{N} T_i \alpha_i \mathbf{c}_i$$
+
+Let $\mathbf{C}(\mathbf{r})$ be the ground-truth RGB color of the corresponding pixel in the training image. Then the loss for an image is taken to be the squared error
+$$\mathcal{L}(\Theta) = \sum_{\mathbf{r}}\left\|\hat{\mathbf{C}}(\mathbf{r}) - \mathbf{C}(\mathbf{r})\right\|_2^2$$
+
+
+
+The gradients are computed by the chain rule.
+
+First, we differentiate the loss with respect to the predicted color $\mathbf{c}_i$: \\
+$\dfrac{\partial \mathcal{L}}{\partial \hat{\mathbf{C}}(\mathbf{r})} = 2\left(\hat{\mathbf{C}}(\mathbf{r}) - \mathbf{C}(\mathbf{r})\right)$. Since $\hat{\mathbf{C}}(\mathbf{r}) = \sum\limits_{i=1}^{N} T_i\alpha_i\mathbf{c}_i$, so we have for each sample color $\dfrac{\partial \hat{\mathbf{C}}(\mathbf{r})}{\partial \mathbf{c}_i} = T_i\alpha_i$, thus
+$$\dfrac{\partial \mathcal{L}}{\partial \mathbf{c}_i} = \dfrac{\partial \mathcal{L}}{\partial \hat{\mathbf{C}}(\mathbf{r})}\cdot \dfrac{\partial \hat{\mathbf{C}}(\mathbf{r})}{\partial \mathbf{c}_i} = 2\left(\hat{\mathbf{C}}(\mathbf{r}) - \mathbf{C}(\mathbf{r})\right)\cdot T_i\alpha_i$$
+
+For the density $\sigma_i$, it affects both $\alpha_i$ and all $T_k$ with $k>i$:
+$$\alpha_k = 1 - \exp(-\sigma_k\delta_k) \quad\Rightarrow\quad \frac{\partial \alpha_i}{\partial \sigma_i} = \delta_i \exp(-\sigma_i\delta_i) = \delta_i(1 - \alpha_i)$$
+For the transmittance, when $k>i$:
+$$T_k = \exp\left(-\sum_{j<k}\sigma_j\delta_j\right) \quad\Rightarrow\quad \frac{\partial T_k}{\partial \sigma_i}
+= -\delta_i T_k$$
+and when $k\leq i$, $\sigma_i$ does not appear in the sum, so $\dfrac{\partial T_k}{\partial\sigma_i} = 0$. Thus
+$$\frac{\partial \hat{\mathbf{C}}(\mathbf{r})}{\partial \sigma_i} = T_i\frac{\partial\alpha_i}{\partial\sigma_i}\mathbf{c}_i + \sum_{k=i+1}^{N}\frac{\partial T_k}{\partial\sigma_i}\alpha_k\mathbf{c}_k = T_i\delta_i(1 - \alpha_i)\mathbf{c}_i - \delta_i\sum_{k=i+1}^{N}T_k\alpha_k\mathbf{c}_k$$
+$$\Rightarrow\qquad \frac{\partial \mathcal{L}}{\partial \sigma_i} = \frac{\partial \mathcal{L}}{\partial \hat{\mathbf{C}}(\mathbf{r})} \cdot \frac{\partial \hat{\mathbf{C}}(\mathbf{r})}{\partial \sigma_i} = 2\left(\hat{\mathbf{C}}(\mathbf{r}) - \mathbf{C}(\mathbf{r})\right)\cdot\left(T_i\delta_i(1 - \alpha_i)\mathbf{c}_i - \delta_i\sum_{k=i+1}^{N}T_k\alpha_k\mathbf{c}_k\right)$$
+
+Finally, each pair $(\mathbf{c}_i,\sigma_i)$ is an output of the MLP $F_\Theta$ given the 5D input. Thus we can continue
+to apply the chain rule layer by layer inside the network, propagating $\dfrac{\partial \mathcal{L}}{\partial \mathbf{c}_i}$ and $\dfrac{\partial \mathcal{L}}{\partial \sigma_i}$ back to all parameters, obtaining $\nabla_\Theta\mathcal{L}$.
+
+
+
+(c) The original NeRF requires multi-view RGB images of a single static 3D scene together with the corresponding camera parameters, i.e. the camera's intrinsics and extrinsics.
+
+\end{homeworkProblem}
+
+\newpage

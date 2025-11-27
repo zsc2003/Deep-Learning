@@ -1,0 +1,89 @@
+\begin{homeworkProblem}
+
+4. Coding: VAE on MNIST.
+
+A Python notebook with the code to be completed is provided. Please complete it using the following intructions. This problem is adapted from the pset1 of \href{https://mit-6s978.github.io/schedule.html}{Course 6.S978 Deep Generative Models} given by Professor Kaiming He at MIT.
+
+VAEs are trained by maximizing the Evidence Lower Bound (ELBO) on the marginal log-likelihood:
+$$\log p(x) \geq \E_{q(z|x)}\left[\log\frac{p(x, z)}{q(z|x)}\right] = \mathrm{ELBO},$$
+
+where $x$ is the data (binary images for MNIST) and $z$ is the latent code.
+
+(a) Give a detailed mathematical proof of the ELBO starting from the marginal log-likelihood $\log p(x)$. (2 Points)
+
+(b) Complete the implementation of the  ``self.encoder'' and ``self.decoder'' in the ``VAE()'' model. (2 Points)
+
+(c) Implement the reparameterization trick in the ``reparameterize()'' function. In this assignment, we only sample one latent code $z_{i}$ for each $x_i$. (1 Points)
+
+(d) In practice, the above expectation in ELBO is estimated using Monte Carlo sampling, yielding the generic Stoachastic Gradient Variational Bayes (SGVB) estimator,
+$$\mathrm{ELBO} \approx \sum_{i} \left[\log p(x_i|z_{i}) + \log p(z_{i}) - \log q(z_{i}|x_i)\right],$$
+where $z_{i}$ is sampled from $ q(z|x_i) = \mathcal{N}(z;\mu_i, \sigma^2_i \mathbf{I})$.
+
+Finalize the SGVB estimator by completing the ``log\_normal\_pdf()'' function, which computes the log probability for a normal distribution given its mean and variance. (1 Points)
+
+(e) In many cases, Monte Carlo sampling is not necessary to estimate all the terms of ELBO, as some terms can be integrated analytically. In particular, when both $q(z|x)=\mathcal{N}(z;\mu(x),\mathrm{diag}(\sigma^2(x)))$ and $p(z)=\mathcal{N}(z;0,I)$ are Gaussian distributions, the ELBO can be decomposed into an analytical KL divergence plus the expected reconstruction error:
+$$\mathrm{ELBO} \approx -D_{KL}(q(z|x) \| p(z)) + \sum_{i} \log p(x_i|z_{i}) = \\\frac{1}{2}\sum_{d}(1+\log((\sigma_d)^2) - (\mu_d)^2 - (\sigma_d)^2) + \sum_{i} \log p(x_i|z_{i})$$
+where $d$ is the dimension of the latent space, and i is the indices of the data.
+
+Run the verfirication code to check if the analytical KL divergence matches the Monte Carlo estimate. (2 Points)
+
+(f) Using the above two losses, train two VAE models on the MNIST dataset (manual tuning of parameters such as epochs, hidden dims, lr, coeff may be necessary). Use the provided evaluation code to visualize the reconstruction results and the generated images (in 2D grid) for both models. (3 Points)
+
+(g) Latent Interpolation: Encode two MNIST test images with different digit labels to obtain latent codes $z_1$ and $z_2$. Linearly interpolate between them using $z(\alpha) = (1-\alpha)z_1 + \alpha z_2$ for $\alpha\in\{0,0.1,\ldots,1\}$, decode each interpolated code with your trained VAE decoder, and display the generated images in order. Briefly describe how the generated digits gradually transform from one class to the other along the interpolation. (2 Points)
+
+\textcolor{blue}{Solution}
+
+For the marginal log-likelihood of $\log p(x)$, we can introduce an arbitrary conditional distribution $q(z|x)$ over the latent variable $z$, then we can get that
+$$\log p(x) = \log p(x) \underbrace{\int q(z|x) \dz}_{1} = \int q(z|x) \log p(x) \dz = \E_{q(z|x)}\left[\log p(x)\right]$$
+Then according to Bayes' rule, we can get that
+$$p(x,z) = p(z|x)p(x)$$
+Thus we have
+\begin{align*}
+\log p(x) &= \E_{q(z|x)}\left[\log p(x)\right] \\
+&= \E_{q(z|x)}\left[\log \frac{p(x,z)}{p(z|x)}\right] \\
+&= \E_{q(z|x)}\left[\log \left(\frac{p(x,z)}{q(z|x)}\cdot\frac{q(z|x)}{p(z|x)}\right)\right] \\
+&= \E_{q(z|x)}\left[\log \frac{p(x,z)}{q(z|x)} + \log \frac{q(z|x)}{p(z|x)}\right] \\
+&= \E_{q(z|x)}\left[\log \frac{p(x,z)}{q(z|x)}\right] + \E_{q(z|x)}\left[\log \frac{q(z|x)}{p(z|x)}\right] \\
+&= \underbrace{\E_{q(z|x)}\left[\log \frac{p(x,z)}{q(z|x)}\right]}_{ELBO} + KL(q(z|x),p(z|x))
+\end{align*}
+According to the fact that $\log(\cdot)$ is a concave function. From Jensen's inequality, we have for any nonnegative random variable $Y$: $\E[\log(Y)] \leq \log[E(Y)]$, and setting $Y=\frac{\nu(x)}{\mu(x)}$, we can get that the KL divergence is nonnegative:
+$$-KL(\mu\|\nu) = -\E_{\mu}\left[\log \frac{\mu(x)}{\nu(x)}\right] = \E_{\mu}\left[\log \frac{\nu(x)}{\mu(x)}\right] \leq \log \E_{\mu}\left[\frac{\nu(x)}{\mu(x)}\right] = \log\left(\int \mu(x)\cdot \frac{\nu(x)}{\mu(x)}\right) = \log\left(\int \nu(x)\right) = 0$$
+
+i.e. $KL(\mu\|\nu)\geq 0$ with equality if and only if $\mu = \nu$. So above all, we have proved that
+$$\log p(x) \geq \E_{q(z|x)}\left[\log\frac{p(x, z)}{q(z|x)}\right] = \mathrm{ELBO}$$
+With equality if and only if $q(z|x)=p(z|x)$.
+
+
+
+(b), (c), (d), (e), (f), (g)'s implementation code are in \texttt{hw2\_coding.ipynb}.
+
+(e) As shown in the figure \ref{fig:loss}, as the number of samples increases, the Monte-Carlo estimation SGVB quickly converges to the analytic KL value. The two curves gradually get almost overlap, with only minor stochastic fluctuations. This demonstrates that our derivation and implementation of the analytic KL are correct.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{./Img/loss.png}
+    \caption{Loss comparison between SGVB and analytic KL.}
+    \label{fig:loss}
+\end{figure}
+
+(f) As shown in the figure \ref{fig:reconstruct}, the left column shows reconstructions obtained using the SGVB loss, the right column shows those from the model trained with the analytic KL loss. Both models capture the global digit structure, and could reconstruct the input images.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.23\textwidth]{./Img/reconstruct_1.png}
+    \includegraphics[width=0.23\textwidth]{./Img/reconstruct_2.png}
+    \caption{Reconstruction comparison between models trained with SGVB loss (left) and analytic KL loss (right).}
+    \label{fig:reconstruct}
+\end{figure}
+
+(g) As shown in the figure \ref{fig:interpolation}, starting from the digit represented by $z_1$, the generated images gradually morph as $\alpha$ increases, with intermediate samples blending structural features from both digits. Early images retain the shape of the first digit, mid-range images show mixed or ambiguous patterns, and the final images fully adopt the appearance of the digit represented by $z_2$. This progression demonstrates that the learned latent space is well-structured and supports semantic interpolation between different digit classes.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.33\textwidth]{./Img/interpolation_1.png}
+    \includegraphics[width=0.33\textwidth]{./Img/interpolation_2.png}
+    \caption{Generated samples from VAEs trained with SGVB loss (left) and analytic KL loss (right)}
+    \label{fig:interpolation}
+\end{figure}
+
+\end{homeworkProblem}
+
+\newpage

@@ -1,0 +1,104 @@
+\begin{homeworkProblem}
+
+2: Policy Improvement in Value Iteration and Policy Iteration (3 pts)
+
+\begin{itemize}
+\item (2 pts) Prove that the policy improvement step in in \textbf{Policy iteration} guarantees a monotonic improvement in the value function, i.e.,
+$$V^{\pi_{k+1}}(s) \geq V^{\pi_k}(s), \quad \forall s \in \mS$$
+
+\item (3 pts) Let $\pi_k$ be the greedy policy extracted from the $k$-th iteration of the \textbf{value iteration} algorithm, i.e.,
+$$\pi_k(s) = \argmax_a \sum_{s'} P(s',r | s, a)\left[r(s, a, s') + \gamma V_k(s') \right]$$
+Let $\pi_{k+1}$ be the policy extracted from the $(k+1)$-th value iteration step. Is it still true that the value function improves under the new policy, i.e.,
+$$V^{\pi_{k+1}}(s) \geq V^{\pi_k}(s), \quad \forall s \in \mS?$$
+Either \textbf{prove} the statement or provide a \textbf{counterexample} to disprove it.
+\end{itemize}
+
+\textcolor{blue}{Solution}
+
+For a discounted finite MDP with state space $\mS$, action space $\A$, transition dynamics $P(s',r | s,a)$, and discount factor $\gamma\in(0,1)$. For a policy $\pi$, the value and action-value functions are
+$$V^\pi(s)=\E_\pi \left[\sum_{t=0}^{\infty}\gamma^t R_{t+1} \Big| S_0=s\right], \qquad Q^\pi(s,a)=\sum_{s',r} P(s',r | s,a)\left[r+\gamma V^\pi(s')\right]$$
+And the Bellman equation is that:
+$$V^\pi = \gamma P^\pi V^\pi + b^\pi$$
+where for each state $s$,
+$$b^\pi(s)=\sum_{a}\pi(a | s)\sum_{s',r}P(s',r | s,a) r, \qquad [P^\pi]_{ss'}=\sum_{a}\pi(a | s)\sum_{r}P(s',r | s,a)$$
+
+
+(1) For policy iteration, at iteration $k$, it follows: \\
+1. Policy evaluation: compute $V^{\pi_k}$ exactly. \\
+2. Policy improvement: $\pi_{k+1}(s)\in\argmax\limits_a Q^{\pi_k}(s,a)$.
+
+From the policy improvement, we can get that for every $s$,
+$$\sum_a \pi_{k+1}(a | s) Q^{\pi_k}(s,a)  \geq \sum_a \pi_k(a | s) Q^{\pi_k}(s,a)  = V^{\pi_k}(s)$$
+Using the definition of $Q^{\pi_k}$, the left-hand side equals
+$$\sum_a \pi_{k+1}(a | s)\sum_{s',r}P(s',r | s,a)\left[r+\gamma V^{\pi_k}(s')\right] = b^{\pi_{k+1}}(s) + \gamma\sum_{s'}[P^{\pi_{k+1}}]_{ss'} V^{\pi_k}(s')$$
+Write it in the vector form:
+$$b^{\pi_{k+1}}+\gamma P^{\pi_{k+1}}V^{\pi_k} \geq V^{\pi_k} \quad\Rightarrow\quad (I-\gamma P^{\pi_{k+1}})V^{\pi_k} \leq b^{\pi_{k+1}}$$
+
+On the other hand, by the Bellman equation for $\pi_{k+1}$ is
+$$(I-\gamma P^{\pi_{k+1}})V^{\pi_{k+1}} = b^{\pi_{k+1}} \quad\Rightarrow\quad V^{\pi_{k+1}} = (I-\gamma P^{\pi_{k+1}})^{-1}b^{\pi_{k+1}}$$
+
+Since $\gamma\in(0,1)$ and $P^{\pi_{k+1}}$ is a stochastic matrix, we have
+$$(I-\gamma P^{\pi_{k+1}})^{-1}=\sum_{t=0}^{\infty} (\gamma P^{\pi_{k+1}})^t$$
+whose entries are all nonnegative. Thus the vector form of policy improvement step could be further written as
+$$V^{\pi_k} \leq (I-\gamma P^{\pi_{k+1}})^{-1} b^{\pi_{k+1}}  = V^{\pi_{k+1}}$$
+So above all, we have proved that
+$$V^{\pi_{k+1}}(s)\geq V^{\pi_k}(s),\qquad \forall s\in\mS$$
+
+
+
+(2) For value iteration, we can construct a following counterexample:
+
+Let $\gamma=0.9$ and $\mS=\{s_0,s_1\}, \A={a_0, a_1}$. The transition and reward dynamics are deterministic and given by the joint distribution $P(s',r | s,a)$:
+
+At state $s_0$:
+$$P(s_0,1 | s_0,a_0)=1,\qquad P(s_1,2 | s_0,a_1)=1$$
+At state $s_1$ (only one valid action $a_0$):
+$$P(s_0,0 | s_1,a_0)=1$$
+All other transition probabilities are zero.
+
+
+Thus the value iteration updates the value function according to
+$$V_{k+1}(s)=\max_a \sum_{s',r} P(s',r | s,a)\left[r+\gamma V_k(s')\right]$$
+and the greedy policy
+$$\pi_k(s)\in\argmax_a \sum_{s',r} P(s',r | s,a)\left[r+\gamma V_k(s')\right]$$
+
+Initialize $V_0(s_0)=V_0(s_1)=0$.
+
+In this construction, at state $s_0$, $r+\gamma V_0(s')$ has
+$$1+\gamma V_0(s_0)=1,\qquad 2+\gamma V_0(s_1)=2$$
+so $\pi_0(s_0)=a_1$. At state $s_1$, the only action is $a_0$, hence $\pi_0(s_1)=a_0$.
+
+For the first interation's update, compute $V_1$:
+\begin{align*}
+V_1(s_0) &= \max\{1+\gamma V_0(s_0), 2+\gamma V_0(s_1)\}=2 \\
+V_1(s_1) &= 0+\gamma V_0(s_0)=0
+\end{align*}
+
+And the corresponding greedy policy is:
+$$1+\gamma V_1(s_0)=1+0.9\cdot 2=2.8,\qquad 2+\gamma V_1(s_1)=2$$
+Thus $\pi_1(s_0)=a_0$, and $\pi_1(s_1)=a_0$.
+
+But for the true value function: with policy $\pi_1$, from $s_0$ the agent stays in $s_0$ and receives reward $1$ at every step:
+\begin{align*}
+V^{\pi_1}(s_0) &= \sum_{t=0}^\infty \gamma^t \cdot 1 = \frac{1}{1-\gamma} = \frac{1}{0.1}=10 \\
+V^{\pi_1}(s_1) &= 0+\gamma V^{\pi_1}(s_0)=0.9\cdot 10 = 9
+\end{align*}
+
+With policy $\pi_0$, starting from $s_0$ the reward sequence is $2,0,2,0,\ldots$. Thus
+\begin{align*}
+V^{\pi_0}(s_0) &= 2+\gamma^2\cdot 2+\gamma^4\cdot 2+\cdots = 2\sum_{t=0}^\infty \gamma^{2t} = \frac{2}{1-\gamma^2} = \frac{2}{1-0.81} = \frac{2}{0.19}\approx 10.526 \\
+V^{\pi_0}(s_1) &= 0+\gamma V^{\pi_0}(s_0) = 0.9\cdot \frac{2}{0.19}\approx 9.474
+\end{align*}
+
+
+Since
+$$V^{\pi_1}(s_0)=10 < 10.526\approx V^{\pi_0}(s_0), \qquad V^{\pi_1}(s_1)=9 < 9.474\approx V^{\pi_0}(s_1)$$
+Thus, in this construction,
+$$V^{\pi_{1}}(s_0)<V^{\pi_{0}}(s_0) \quad\text{and}\quad V^{\pi_{1}}(s_1)<V^{\pi_{0}}(s_1)$$
+Which means that it is not true that
+$$V^{\pi_{k+1}}(s)\geq V^{\pi_k}(s),\quad \forall s\in\mS$$
+Thus we have a counterexample to disprove the statement.
+
+\end{homeworkProblem}
+
+\newpage

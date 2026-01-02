@@ -1,0 +1,111 @@
+\begin{homeworkProblem}
+
+1: Diffusion Models (5 pts)
+
+Consider a diffusion model defined by the forward SDE
+$$\dX_t = -\frac{1}{2} \beta(t) X_t \dt + \sqrt{\beta(t)} \dW_t, \qquad t\in[0,T]$$
+
+The corresponding reverse-time SDE, using a learned score function $s_{\theta}(x,t) \approx \nabla_x \log p_t(x)$, is given by
+$$\dX_t = \left[-\frac{1}{2} \beta(t) X_t - \beta(t) s_\theta(X_t,t) \right]\dt + \sqrt{\beta(t)} \dbW_t$$
+where $\bar{W}_t$ denotes a standard Brownian motion in reverse time.
+
+\begin{itemize}
+\item (2 pts) Assume the score function is exact, i.e. $s_{\theta}(x,t) = \nabla_x \log p_t(x)$. Prove that the solution of the ODE
+$$\frac{\dx_t}{\dt} = -\frac{1}{2} \beta(t) x_t - \frac{1}{2} \beta(t) s_\theta(x_t,t)$$
+and the reverse-time SDE share the same marginal distribution $p_t(x)$ for all $t \in [0,T]$.
+
+\item (3 pts) Use the \textbf{integrating factor method} to analytically handle the linear term $-\frac{1}{2} \beta(t) x_t $ in the above ODE, and then apply \textbf{forward Euler discretization} to the remaining nonlinear term to derive an explicit one-step update formula for $x_{t+h}$ in terms of $x_t$.
+\end{itemize}
+
+\textcolor{blue}{Solution}
+
+(1) We can write the forward SDE in the standard form:
+$$\dX_t = f(X_t,t)\dt + g(t)\dW_t, \qquad f(x,t)=-\frac{1}{2}\beta(t)x, \quad g(t) = \sqrt{\beta(t)}$$
+Let $p_t(x)$ be the marginal density of the forward process $X_t$. Then $p_t$ satisfies the forward Fokker-Planck (Kolmogorov forward) equation
+$$\partial_t p_t(x) = -\nabla\cdot \left(f(x,t)p_t(x)\right) +\frac{1}{2}\nabla\cdot \left(g^2(t)\nabla p_t(x)\right)$$
+
+From the assumption, we know that the score is exact:
+$$s_{\theta}(x,t)=\nabla_x\log p_t(x)$$
+Thus the reverse-time SDE written in the usual score-based form is
+$$\dX_t = \left[f(X_t,t)-g^2(t)\nabla\log p_t(X_t)\right]\dt + g(t)\dbW_t$$
+
+
+By the SDE's property, if the forward SDE
+$$\dX_t = f(X_t,t)\dt + g(t)\dW_t$$
+has marginal density $p_t(x)$, then the time-reversed dynamics, when initialized from $X_T \sim p_T$ and integrated backward from $T$ to $0$, satisfies
+$$\dX_t = \left[f(X_t,t)-g^2(t)\nabla_x\log p_t(X_t)\right]\dt + g(t)\dbW_t$$
+where $\bar{W}_t$ is a standard Brownian motion in reverse time. In this case, the one-time marginal distribution of $X_t$ is exactly $p_t(x)$ for all $t \in [0,T]$.
+
+Since the score function is exact, $s_\theta(x,t)=\nabla_x\log p_t(x)$, the reverse-time SDE in the problem has marginals $p_t$.
+
+Next we show that the probability flow ODE induces the same marginal density $p_t$. Combined with the previous step, this implies that the ODE and the reverse-time SDE share the same marginals.
+
+$$\frac{\dx_t}{\dt} = f(x_t,t)-\frac{1}{2}g^2(t) s_\theta(x_t,t) = \underbrace{f(x,t)-\frac{1}{2}g^2(t)\nabla_x\log p_t(x)}_{v(x,t)}$$
+And let $\rho_t(x)$ be the density induced by the ODE flow.
+
+For deterministic dynamics $\dot{x} = v(x,t)$, the density $\rho_t$ satisfies the continuity (Liouville) equation
+$$\partial_t \rho_t(x) = -\nabla\cdot\left(v(x,t)\rho_t(x)\right)$$
+On the other hand, as shown above, the forward diffusion marginals $p_t$ satisfy
+\begin{align*}
+\partial_t p_t(x) &= -\nabla\cdot\left(f(x,t)p_t(x)\right) + \frac{1}{2}\nabla\cdot\left(g^2(t)\nabla p_t(x)\right) \\
+&= -\nabla\cdot\left(f(x,t)p_t(x)\right) + \frac{1}{2}\nabla\cdot\left(g^2(t)\nabla_x\log p_t(x)\cdot p_t(x)\right) \\
+&= -\nabla\cdot\left(\left[f(x,t)-\frac{1}{2}g^2(t)\nabla_x\log p_t(x)\right]p_t(x)\right) \\
+&= -\nabla\cdot\left(v(x,t)p_t(x)\right)
+\end{align*}
+
+Therefore, both $\rho_t$ and $p_t$ satisfy the same continuity equation
+$$\partial_t \rho_t(x) = -\nabla\cdot\left(v(x,t)\rho_t(x)\right).$$
+
+If $\rho_{t_0}=p_{t_0}$ at some time $t_0$, then under standard regularity assumptions on $v(x,t)$,
+uniqueness of solutions to the continuity equation implies
+$$\rho_t(x)=p_t(x)\qquad\text{for all }t$$
+In sampling, one takes $t_0=T$, draws $x_T\sim p_T$, and integrates the ODE from $T$ to $0$ using a negative step size.
+
+In practice, sampling from $p_T$ to $p_0$ is achieved by integrating this same ODE backward in time using a negative step size, which does not require posing a terminal-value problem for the PDE.
+
+So above all, the reverse-time SDE has marginal density $p_t$ at each time $t$ (when run from $T$ to $0$). Moreover, the probability flow ODE induces a density $\rho_t$ that satisfies the same continuity equation as $p_t$.
+
+Since $\rho_{t_0}=p_{t_0}$ at some time $t_0$ ($t_0=T$ in sampling), uniqueness of solutions to the continuity equation with initial time $t_0$ implies that $\rho_t=p_t$ for all $t\in[0,T]$.
+
+
+
+
+(2) For the probability flow ODE with exact score $s_{\theta}(x,t) = \nabla_x \log p_t(x)$:
+$$\frac{\dx}{\dt} = -\frac{1}{2}\beta(t)x - \frac{1}{2}\beta(t)s_{\theta}(x,t)$$
+Rewrite it as a linear ODE plus a nonlinear forcing term:
+$$\frac{\dx}{\dt} + \underbrace{\frac{1}{2}\beta(t)}_{P(t)}x(t) = -\frac{1}{2}\beta(t)s_{\theta}(x(t),t)$$
+
+Apply the integrating  factor method, the integrating factor is
+$$\mu(t) = \exp\left(\int_{0}^{t}P(u)\du\right) = \exp\left(\int_{0}^{t}\frac{1}{2}\beta(u)\du\right)$$
+Then
+\begin{align*}
+\mu(t)\frac{\dx}{\dt} + \mu(t)P(t)x(t) &= \mu(t)\cdot \left(-\frac{1}{2}\beta(t)s_{\theta}(x(t),t)\right) \\
+\Rightarrow\quad \frac{\mathrm{d}}{\dt}\left(\mu(t)x(t)\right) &= -\frac{1}{2}\mu(t)\beta(t)s_{\theta}(x(t),t)
+\end{align*}
+
+Let $y(t)=\mu(t)x(t), y'(t)=-\frac{1}{2}\mu(t)\beta(t)s_{\theta}(x(t),t)$. Then
+$$\frac{\dy}{\dt}=-\frac{1}{2}\mu(t)\beta(t)s_{\theta}(x(t),t)$$
+
+
+Then we can apply the forward Euler method to the remaining term:
+$$y(t+h)\approx y(t) + hy'(t) = y(t)-\frac{1}{2}h\mu(t)\beta(t)s_{\theta}(x(t),t)$$
+Substitute back $y(t)=\mu(t)x(t)$ and divide by $\mu(t+h)$:
+\begin{align*}
+\mu(t+h)x(t+h) &\approx \mu(t)x(t)-\frac{1}{2}h\mu(t)\beta(t)s_{\theta}(x(t),t) \\
+\Rightarrow\quad x(t+h) &\approx \frac{\mu(t)}{\mu(t+h)}x(t) - \frac{1}{2}h\frac{\mu(t)}{\mu(t+h)}\beta(t)s_{\theta}(x(t),t)
+\end{align*}
+Finally, using the definition of $\mu(t)$:
+\begin{align*}
+\frac{\mu(t)}{\mu(t+h)} &= \dfrac{\displaystyle\exp\left(\int_{0}^{t}P(u)\du\right)}{\displaystyle\exp\left(\int_{0}^{t+h}P(u)\du\right)} \\
+&= \exp\left(-\int_{t}^{t+h}P(u)\du\right) \\
+&= \exp\left(-\int_{t}^{t+h}\frac{1}{2}\beta(u)\du\right) \\
+&= \exp\left(-\frac{1}{2}\int_{t}^{t+h}\beta(u)\du\right) \\
+&\approx \exp\left(-\frac{1}{2}\beta(t)\cdot h\right)
+\end{align*}
+
+So above all, the explicit one-step update formula is
+$$x_{t+h} \approx \exp\left(-\frac{1}{2}\beta(t)\cdot h\right)x_t - \frac{1}{2}h \beta(t)\exp\left(-\frac{1}{2}\beta(t)\cdot h\right)s_{\theta}(x_t,t)$$
+
+\end{homeworkProblem}
+
+\newpage

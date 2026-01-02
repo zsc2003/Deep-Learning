@@ -1,0 +1,11 @@
+## Environment Setup
+
+```bash
+conda create -n DL python=3.10
+conda activate DL
+pip install ipykernel
+pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+pip install matplotlib
+pip install tqdm
+pip install ipywidgets
+```

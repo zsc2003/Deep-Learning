@@ -1,0 +1,111 @@
+\begin{homeworkProblem}
+
+Programming Problem: Comparing SARSA and Q-Learning on $10\times 10$ Gridworld (10 pts)
+
+In this problem, you will implement and compare two temporal-difference reinforcement learning algorithms:
+
+\begin{itemize}
+    \item SARSA (On-policy TD(0))
+    \item Q-Learning (Off-policy TD(0))
+\end{itemize}
+
+You will test them on a $10\times 10$ Gridworld with obstacles and a goal.
+
+\subsection{Environment Description}
+\begin{itemize}
+\item \textbf{Grid size}: $10\times 10$ (states indexed by (row, col))
+\item \textbf{Actions}: \{up, down, left, right\}
+\item \textbf{Transition}: deterministic, constrained by grid boundaries
+\item \textbf{Rewards}:
+    \begin{itemize}
+        \item Reaching the \textbf{goal state} (red $G$): \textbf{+10}, then episode ends
+        \item Stepping into an \textbf{obstacle} (green $O$): \textbf{-10}, and the agent remains in the obstacle
+        \item All other steps: \textbf{0}
+    \end{itemize}
+\item \textbf{Goal state behavior}:
+    \begin{itemize}
+        \item It is \textbf{terminal and absorbing}: after entering the goal, any action returns the agent to the goal state with \textbf{reward 0}
+    \end{itemize}
+\item \textbf{Start state}: always starts at $(0, 0)$
+\item \textbf{Discount factor}: $\gamma = 0.99$
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \vspace{-0.5cm}
+    \includegraphics[width=0.36\textwidth]{./Img/grid.png}
+    \vspace{-0.5cm}
+\end{figure}
+
+\subsection{Task: Compare Convergence}
+\begin{enumerate}
+\item Implement \textbf{SARSA} and \textbf{Q-learning} using an $\epsilon$-greedy policy with $\epsilon = 0.1$ or $0.5$.
+\item Randomly select \textbf{10 distinct non-terminal, non-obstacle states} from the grid.
+\item During training, track the \textbf{value estimate} at each selected state:
+    \begin{itemize}
+        \item Define the state value as $V(s) = \max\limits_a Q(s, a)$.
+    \end{itemize}
+\item For each algorithm, plot the \textbf{sum of the values} at the 10 selected states over episodes and compare the convergence rate.
+\end{enumerate}
+
+\textcolor{blue}{Solution}
+
+For the details of the implementation, set the left-up corner to be $(0,0)$, right-down corner to be $(9,9)$.
+
+And when implement the algorithms, set the learning rate to be $\alpha\gets 0.2$, the total number of episodes to be $3000$. And for Q-Learning, the max steps is set to be $500$.
+
+For reproducibility, set the same seed $0$. Then the sum of the values at the $10$ selected states over episodes could seen in Figure~\ref{fig:curve}. We can find that for both $\epsilon=0.1$ and $\epsilon=0.5$, Q-learning converges faster and reaches higher summed state values than SARSA. The gap is more pronounced for larger $\epsilon$, as SARSA's on-policy updates account for exploratory actions and slow convergence.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/curve.png}
+    \caption{Convergence of SARSA and Q-learning on the $10\times 10$ Gridworld under different exploration rates.}
+    \label{fig:curve}
+\end{figure}
+
+The value function $V(s)$ and the policy $\pi$ of different algorithms and $\epsilon$ are shown in Figure~\ref{fig:SARSA_0.1}, Figure~\ref{fig:SARSA_0.5}, Figure~\ref{fig:QLearning_0.1}, and Figure~\ref{fig:QLearning_0.5}. \\
+
+From the results, we could find that under a higher exploration rate ($\epsilon=0.5$), Q-learning explores the grid more thoroughly and therefore assigns non-zero values to many more states; in contrast, with lower exploration or more conservative learning, a noticeable portion of states can remain effectively unvisited, resulting in $V(s)\approx 0$ across those regions. Empirically, the summed values over the tracked states increase faster and converge to a higher level for Q-learning than for SARSA, especially when $\epsilon$ is large. \\
+
+And Q-learning is off-policy that updates toward the greedy target $r+\gamma\max_{a'}Q(s',a')$, so even when behavior is highly exploratory ($\epsilon=0.5$), the value estimates are still driven by the optimal continuation. \\
+
+SARSA is on-policy and updates using the next executed action $r+\gamma Q(s',a')$ where $a'$ is sampled from the $\epsilon$-greedy behavior; with $\epsilon=0.5$, the probability of taking suboptimal actions is high, so SARSA learns a more conservative policy and lower state values. As a result, Q-learning retains faster convergence and higher final values under heavy exploration, while SARSA's estimates are more strongly degraded by the exploratory behavior itself.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.49\textwidth]{./Img/SARSA_value_0.1.png}
+    \includegraphics[width=0.49\textwidth]{./Img/SARSA_policy_0.1.png}
+    \caption{State-value function and greedy policy learned by SARSA with $\epsilon=0.1$.}
+    \label{fig:SARSA_0.1}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.49\textwidth]{./Img/SARSA_value_0.5.png}
+    \includegraphics[width=0.49\textwidth]{./Img/SARSA_policy_0.5.png}
+    \caption{State-value function and greedy policy learned by SARSA with $\epsilon=0.5$.}
+    \label{fig:SARSA_0.5}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.49\textwidth]{./Img/QLearning_value_0.1.png}
+    \includegraphics[width=0.49\textwidth]{./Img/QLearning_policy_0.1.png}
+    \caption{State-value function and greedy policy learned by Q-Learning with $\epsilon=0.1$.}
+    \label{fig:QLearning_0.1}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.49\textwidth]{./Img/QLearning_value_0.5.png}
+    \includegraphics[width=0.49\textwidth]{./Img/QLearning_policy_0.5.png}
+    \caption{State-value function and greedy policy learned by Q-Learning with $\epsilon=0.5$.}
+    \label{fig:QLearning_0.5}
+\end{figure}
+
+\end{homeworkProblem}
+
+\newpage

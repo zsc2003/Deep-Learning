@@ -1,0 +1,103 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand*\HyPL@Entry[1]{}
+\citation{Dust3r}
+\citation{Vggt}
+\citation{Lvsm}
+\citation{RayZer}
+\HyPL@Entry{0<</S/D>>}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background and Preliminaries}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Problem Setting and Notation}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Pinhole camera geometry: a pixel on the image plane of size $W\times H$ corresponds to a unique viewing direction, defining a ray that starts from the camera center and then passes through the pixel on the projection plane.}}{2}{figure.1}\protected@file@percent }
+\newlabel{fig:ray}{{1}{2}{Pinhole camera geometry: a pixel on the image plane of size $W\times H$ corresponds to a unique viewing direction, defining a ray that starts from the camera center and then passes through the pixel on the projection plane}{figure.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Camera intrinsics.}{2}{section*.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces The pinhole projection model and the normalized image plane. A 3D point is projected through the optical center onto the image plane; by factoring out focal length and principal point, one obtains normalized image coordinates that simplify ray back-projection.}}{2}{figure.2}\protected@file@percent }
+\newlabel{fig:intrinsic}{{2}{2}{The pinhole projection model and the normalized image plane. A 3D point is projected through the optical center onto the image plane; by factoring out focal length and principal point, one obtains normalized image coordinates that simplify ray back-projection}{figure.2}{}}
+\citation{Nerf}
+\citation{3dgs}
+\@writefile{toc}{\contentsline {paragraph}{Camera extrinsics and coordinate frames.}{3}{section*.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Coordinate frames and camera extrinsics. The camera coordinate system is related to the world coordinate system by a rigid transform $(R,t)$; together with intrinsics $K$, this defines the mapping between 3D world points and 2D image measurements.}}{3}{figure.3}\protected@file@percent }
+\newlabel{fig:extrinsic}{{3}{3}{Coordinate frames and camera extrinsics. The camera coordinate system is related to the world coordinate system by a rigid transform $(R,t)$; together with intrinsics $K$, this defines the mapping between 3D world points and 2D image measurements}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Per-scene optimization}{3}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}NeRF: Neural Radiance Fields}{3}{subsubsection.2.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Per-scene optimization pipeline of NeRF. Given posed input images, NeRF optimizes a scene-specific radiance field by enforcing photometric consistency, enabling high-quality rendering from novel viewpoints.}}{3}{figure.4}\protected@file@percent }
+\newlabel{fig:nerf1}{{4}{3}{Per-scene optimization pipeline of NeRF. Given posed input images, NeRF optimizes a scene-specific radiance field by enforcing photometric consistency, enabling high-quality rendering from novel viewpoints}{figure.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces NeRF parameterization and training objective. An MLP takes 5D coordinates (3D position and viewing direction) as input and predicts color and density; differentiable volume rendering produces pixel colors that are matched to ground-truth images with a rendering loss.}}{4}{figure.5}\protected@file@percent }
+\newlabel{fig:nerf2}{{5}{4}{NeRF parameterization and training objective. An MLP takes 5D coordinates (3D position and viewing direction) as input and predicts color and density; differentiable volume rendering produces pixel colors that are matched to ground-truth images with a rendering loss}{figure.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces NeRF volume rendering along a camera ray. Points are sampled on a viewing ray and mapped to density $\sigma _i$ and color $\mathbf  {c}_i$; these samples are composited to produce the final pixel color via volumetric integration.}}{4}{figure.6}\protected@file@percent }
+\newlabel{fig:volume_rendering}{{6}{4}{NeRF volume rendering along a camera ray. Points are sampled on a viewing ray and mapped to density $\sigma _i$ and color $\mathbf {c}_i$; these samples are composited to produce the final pixel color via volumetric integration}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}3D Gaussian Splatting}{5}{subsubsection.2.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces 3D Gaussian Splatting scene representation. A scene is modeled as a set of 3D Gaussians; the visualization shows the correspondence between the photorealistic rendering and the underlying Gaussian primitives (up/lower parts).}}{5}{figure.7}\protected@file@percent }
+\newlabel{fig:gaussian_ball}{{7}{5}{3D Gaussian Splatting scene representation. A scene is modeled as a set of 3D Gaussians; the visualization shows the correspondence between the photorealistic rendering and the underlying Gaussian primitives (up/lower parts)}{figure.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Per-scene optimization pipeline of 3D Gaussian Splatting. Sparse SfM points initialize 3D Gaussians, which are optimized under differentiable rasterization: projections to the image plane and density control enable efficient training and rendering.}}{5}{figure.8}\protected@file@percent }
+\newlabel{fig:gaussian1}{{8}{5}{Per-scene optimization pipeline of 3D Gaussian Splatting. Sparse SfM points initialize 3D Gaussians, which are optimized under differentiable rasterization: projections to the image plane and density control enable efficient training and rendering}{figure.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Adaptive density control in 3D Gaussian Splatting. During optimization, Gaussians are cloned or split to increase representational capacity where needed, improving reconstruction quality while maintaining efficiency.}}{6}{figure.9}\protected@file@percent }
+\newlabel{fig:gaussian2}{{9}{6}{Adaptive density control in 3D Gaussian Splatting. During optimization, Gaussians are cloned or split to increase representational capacity where needed, improving reconstruction quality while maintaining efficiency}{figure.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Generalizable Geometric Reconstruction}{6}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}DUSt3R}{7}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces DUSt3R overview: from unconstrained image collections to dense pointmaps. DUSt3R predicts view-consistent pointmaps from uncalibrated, unposed images, enabling a range of downstream geometric tasks such as depth estimation, correspondence matching, camera calibration, pose estimation, and dense 3D reconstruction.}}{7}{figure.10}\protected@file@percent }
+\newlabel{fig:dust3r_foundation}{{10}{7}{DUSt3R overview: from unconstrained image collections to dense pointmaps. DUSt3R predicts view-consistent pointmaps from uncalibrated, unposed images, enabling a range of downstream geometric tasks such as depth estimation, correspondence matching, camera calibration, pose estimation, and dense 3D reconstruction}{figure.10}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}DUST3R's pipeline}{7}{subsubsection.3.1.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces DUSt3R architecture and pointmap prediction in a common frame. A ViT encoder extracts features from an image pair, followed by Transformer decoders with cross-view information exchange and regression heads that output pointmaps and per-pixel confidence maps. Both predicted pointmaps are expressed in the coordinate frame of the first camera, enabling direct alignment without requiring known camera poses.}}{7}{figure.11}\protected@file@percent }
+\newlabel{fig:dust3r}{{11}{7}{DUSt3R architecture and pointmap prediction in a common frame. A ViT encoder extracts features from an image pair, followed by Transformer decoders with cross-view information exchange and regression heads that output pointmaps and per-pixel confidence maps. Both predicted pointmaps are expressed in the coordinate frame of the first camera, enabling direct alignment without requiring known camera poses}{figure.11}{}}
+\citation{croco}
+\citation{ransac}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Training objective}{8}{subsubsection.3.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.3}From pointmaps to geometric tasks}{8}{subsubsection.3.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.4}Summary}{8}{subsubsection.3.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}VGGT}{8}{subsection.3.2}\protected@file@percent }
+\citation{dinov2}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}Formulation}{9}{subsubsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.2}Architecture}{9}{subsubsection.3.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces VGGT pipeline for feed-forward multi-view geometry. Given a set of input images, VGGT extracts per-image tokens (e.g., via a ViT/DINO backbone), augments them with a camera token, and performs repeated global and frame-level attention to aggregate multi-view information. Task-specific heads then predict cameras and dense geometric outputs such as depth maps and point maps, as well as tracks for establishing correspondences across views.}}{9}{figure.12}\protected@file@percent }
+\newlabel{fig:vggt1}{{12}{9}{VGGT pipeline for feed-forward multi-view geometry. Given a set of input images, VGGT extracts per-image tokens (e.g., via a ViT/DINO backbone), augments them with a camera token, and performs repeated global and frame-level attention to aggregate multi-view information. Task-specific heads then predict cameras and dense geometric outputs such as depth maps and point maps, as well as tracks for establishing correspondences across views}{figure.12}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.3}Summary}{10}{subsubsection.3.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Overall}{10}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Novel View Synthesis with Minimal 3D Inductive Bias}{10}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}LVSM}{10}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.1.1}Pl\"ucker rays}{11}{subsubsection.4.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.1.2}Architecture}{11}{subsubsection.4.1.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces LVSM pipeline and architectural variants. LVSM conditions a Transformer on input views together with Pl\"ucker-ray embeddings, and synthesizes a target view by decoding target-ray tokens. The figure contrasts a decoder-only design (directly mapping input-view and target-ray tokens to the rendered image) with an encoder--decoder variant that compresses multi-view information into latent tokens before decoding.}}{11}{figure.13}\protected@file@percent }
+\newlabel{fig:lvsm}{{13}{11}{LVSM pipeline and architectural variants. LVSM conditions a Transformer on input views together with Pl\"ucker-ray embeddings, and synthesizes a target view by decoding target-ray tokens. The figure contrasts a decoder-only design (directly mapping input-view and target-ray tokens to the rendered image) with an encoder--decoder variant that compresses multi-view information into latent tokens before decoding}{figure.13}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.1.3}Overall}{12}{subsubsection.4.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}RayZer}{12}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.1}Architecture}{12}{subsubsection.4.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces RayZer training pipeline with camera estimation and ray-conditioned rendering. RayZer first predicts camera poses/intrinsics and per-image Pl\"ucker ray maps, reconstructs latent scene tokens from posed input views, and renders target views by decoding along predicted target rays. The model is trained end-to-end with image reconstruction losses between rendered and ground-truth target views.}}{12}{figure.14}\protected@file@percent }
+\newlabel{fig:rayzer2}{{14}{12}{RayZer training pipeline with camera estimation and ray-conditioned rendering. RayZer first predicts camera poses/intrinsics and per-image Pl\"ucker ray maps, reconstructs latent scene tokens from posed input views, and renders target views by decoding along predicted target rays. The model is trained end-to-end with image reconstruction losses between rendered and ground-truth target views}{figure.14}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.2}Unsupervised Learning Details}{13}{subsubsection.4.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces RayZer high-level formulation: zero 3D supervision for novel view synthesis. Given a set of images, RayZer encodes them into a latent scene representation and jointly reasons about camera geometry, then decodes a target view without requiring explicit 3D labels (e.g., camera poses or scene geometry) during training.}}{13}{figure.15}\protected@file@percent }
+\newlabel{fig:rayzer1}{{15}{13}{RayZer high-level formulation: zero 3D supervision for novel view synthesis. Given a set of images, RayZer encodes them into a latent scene representation and jointly reasons about camera geometry, then decodes a target view without requiring explicit 3D labels (e.g., camera poses or scene geometry) during training}{figure.15}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {4.2.3}Summary}{13}{subsubsection.4.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Overall}{14}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{14}{section.5}\protected@file@percent }
+\citation{Dust3r}
+\citation{Vggt}
+\citation{Lvsm}
+\citation{RayZer}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Compact comparison along supervision, representation.}}{15}{table.1}\protected@file@percent }
+\newlabel{tab:comparison_compact}{{1}{15}{Compact comparison along supervision, representation}{table.1}{}}
+\bibstyle{unsrt}
+\bibdata{section/reference}
+\bibcite{Dust3r}{{1}{}{{}}{{}}}
+\bibcite{Vggt}{{2}{}{{}}{{}}}
+\bibcite{Lvsm}{{3}{}{{}}{{}}}
+\bibcite{RayZer}{{4}{}{{}}{{}}}
+\bibcite{Nerf}{{5}{}{{}}{{}}}
+\bibcite{3dgs}{{6}{}{{}}{{}}}
+\bibcite{croco}{{7}{}{{}}{{}}}
+\bibcite{ransac}{{8}{}{{}}{{}}}
+\bibcite{dinov2}{{9}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{16}

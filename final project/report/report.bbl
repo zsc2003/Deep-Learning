@@ -1,0 +1,48 @@
+\begin{thebibliography}{1}
+
+\bibitem{Dust3r}
+Shuzhe Wang, Vincent Leroy, Yohann Cabon, Boris Chidlovskii, and Jerome Revaud.
+\newblock Dust3r: Geometric 3d vision made easy.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition}, pages 20697--20709, 2024.
+
+\bibitem{Vggt}
+Jianyuan Wang, Minghao Chen, Nikita Karaev, Andrea Vedaldi, Christian Rupprecht, and David Novotny.
+\newblock Vggt: Visual geometry grounded transformer.
+\newblock In {\em Proceedings of the Computer Vision and Pattern Recognition Conference}, pages 5294--5306, 2025.
+
+\bibitem{Lvsm}
+Haian Jin, Hanwen Jiang, Hao Tan, Kai Zhang, Sai Bi, Tianyuan Zhang, Fujun Luan, Noah Snavely, and Zexiang Xu.
+\newblock Lvsm: A large view synthesis model with minimal 3d inductive bias.
+\newblock {\em arXiv preprint arXiv:2410.17242}, 2024.
+
+\bibitem{RayZer}
+Hanwen Jiang, Hao Tan, Peng Wang, Haian Jin, Yue Zhao, Sai Bi, Kai Zhang, Fujun Luan, Kalyan Sunkavalli, Qixing Huang, et~al.
+\newblock Rayzer: A self-supervised large view synthesis model.
+\newblock {\em arXiv preprint arXiv:2505.00702}, 2025.
+
+\bibitem{Nerf}
+Ben Mildenhall, Pratul~P Srinivasan, Matthew Tancik, Jonathan~T Barron, Ravi Ramamoorthi, and Ren Ng.
+\newblock Nerf: Representing scenes as neural radiance fields for view synthesis.
+\newblock {\em Communications of the ACM}, 65(1):99--106, 2021.
+
+\bibitem{3dgs}
+Bernhard Kerbl, Georgios Kopanas, Thomas Leimk{\"u}hler, and George Drettakis.
+\newblock 3d gaussian splatting for real-time radiance field rendering.
+\newblock {\em ACM Trans. Graph.}, 42(4):139--1, 2023.
+
+\bibitem{croco}
+Philippe Weinzaepfel, Vincent Leroy, Thomas Lucas, Romain Br{\'e}gier, Yohann Cabon, Vaibhav Arora, Leonid Antsfeld, Boris Chidlovskii, Gabriela Csurka, and J{\'e}r{\^o}me Revaud.
+\newblock Croco: Self-supervised pre-training for 3d vision tasks by cross-view completion.
+\newblock {\em Advances in Neural Information Processing Systems}, 35:3502--3516, 2022.
+
+\bibitem{ransac}
+Martin~A Fischler and Robert~C Bolles.
+\newblock Random sample consensus: a paradigm for model fitting with applications to image analysis and automated cartography.
+\newblock {\em Communications of the ACM}, 24(6):381--395, 1981.
+
+\bibitem{dinov2}
+Maxime Oquab, Timoth{\'e}e Darcet, Th{\'e}o Moutakanni, Huy Vo, Marc Szafraniec, Vasil Khalidov, Pierre Fernandez, Daniel Haziza, Francisco Massa, Alaaeldin El-Nouby, et~al.
+\newblock Dinov2: Learning robust visual features without supervision.
+\newblock {\em arXiv preprint arXiv:2304.07193}, 2023.
+
+\end{thebibliography}

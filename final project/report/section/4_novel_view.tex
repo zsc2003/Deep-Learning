@@ -1,0 +1,105 @@
+\section{Novel View Synthesis with Minimal 3D Inductive Bias}
+
+While DUSt3R and VGGT demonstrate that geometry can be predicted in a generalizable, feed-forward manner, accurate 3D structure alone does not automatically translate into photorealistic rendering. In practice, novel view synthesis must model appearance effects that are only weakly constrained by geometry—occlusions, view-dependent reflectance, specularities, and lighting changes—especially under wide-baseline extrapolation. Moreover, enforcing strong explicit 3D inductive bias such as strict geometric consistency and carefully engineered rendering pipelines can improve controllability but often reintroduces sensitivity to camera accuracy and limits scalability.
+
+
+\subsection{LVSM}
+
+This motivates a complementary line of work: LVSM (\underline{L}arge \underline{V}iew \underline{S}ynthesis with \underline{M}inimal 3D Inductive Bias). Instead of committing to a specific geometric representation and optimizing it per scene, these methods aim to learn transferable priors for rendering directly from large-scale multi-view data, using architectures that can generalize across scenes and viewpoints.
+
+Most high-quality novel view synthesis(NVS) systems rely on explicit 3D representations and rendering pipelines such as NeRF's volume rendering or 3DGS' splatting, which impose strong 3D inductive bias and often require per-scene optimization. LVSM argues that high-fidelity view synthesis can instead be learned as a data-driven mapping with minimal explicit 3D bias: avoid handcrafted 3D scene representations and let a large Transformer learn multi-view fusion directly from large-scale posed data.
+
+
+\subsubsection{Pl\"ucker rays}
+
+Pl\"ucker rays are the keys to LVSM's success. A 3D viewing ray can be represented in multiple equivalent forms. Besides the common origin + direction parameterization $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$, a particularly convenient, coordinate-consistent representation is given by the Pl\"ucker coordinates: a directed line in $\mathbb{R}^3$ is encoded by a 6D vector
+\begin{equation}
+\boldsymbol{\ell} = (\mathbf{d}, \mathbf{m}) \in \mathbb{R}^{6},
+\end{equation}
+where $\mathbf{d}\in\mathbb{R}^3$ is the line normalized direction, and $\mathbf{m}\in\mathbb{R}^3$ is the moment defined as
+\begin{equation}
+\mathbf{m} = \mathbf{p} \times \mathbf{d},
+\end{equation}
+with $\mathbf{p}$ being any point on the line. The moment is invariant to the choice of $\mathbf{p}$ along the line: if $\mathbf{p}'=\mathbf{p}+t\mathbf{d}$, then $\mathbf{p}'\times\mathbf{d}=\mathbf{p}\times\mathbf{d}$ since $\mathbf{d}\times\mathbf{d}=\mathbf{0}$. Therefore, $(\mathbf{d},\mathbf{m})$ uniquely specifies a line up to scale, subject to the Pl\"ucker constraint $\mathbf{d}^{\top} \mathbf{m}=0$.
+
+For a camera with extrinsics $(R,t)$ and intrinsics $K$, a pixel $\tilde{\mathbf{u}}=(u,v,1)^{\top}$ defines a ray. First obtain a direction in the camera frame, $\mathbf{d}_c \propto K^{-1}\tilde{\mathbf{u}}$, and transform it to the world frame:
+\begin{equation}
+\mathbf{d} = R^{\top} \mathbf{d}_c
+\end{equation}
+The camera center in world coordinates is $\mathbf{C} = -R^{\top} t$, which lies on the ray. The corresponding Pl\"ucker moment is
+\begin{equation}
+\mathbf{m} = \mathbf{C} \times \mathbf{d}.
+\end{equation}
+Thus, each pixel can be mapped to a 6D Pl\"ucker embedding $(\mathbf{d},\mathbf{m})$, producing a dense ray map that
+encodes both camera pose and pixel direction.
+
+Pl\"ucker coordinates provide a translation-aware line representation: while the direction $\mathbf{d}$ captures viewing orientation, the moment $\mathbf{m}$ encodes the ray's position relative to the origin. This makes $(\mathbf{d},\mathbf{m})$ well-suited as a geometric conditioning signal for Transformers, since the model can reason about multi-view relationships through ray geometry without explicitly constructing 3D volumes, cost volumes, or performing analytical rendering.
+
+In LVSM (and later RayZer-style models), Pl\"ucker ray maps serve as a minimal yet expressive way to inject camera geometry into a purely token-based, feed-forward view synthesis pipeline.
+
+
+\subsubsection{Architecture}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/lvsm.png}
+    \caption{LVSM pipeline and architectural variants. LVSM conditions a Transformer on input views together with Pl\"ucker-ray embeddings, and synthesizes a target view by decoding target-ray tokens. The figure contrasts a decoder-only design (directly mapping input-view and target-ray tokens to the rendered image) with an encoder--decoder variant that compresses multi-view information into latent tokens before decoding.}
+    \label{fig:lvsm}
+\end{figure}
+
+As the LVSM's architecture shows in Fig. \ref{fig:lvsm}, LVSM encodes camera geometry through per-pixel Pl\"ucker rays. For each input view, it concatenates RGB patches with the corresponding ray-embedding patches to form input tokens; for the target view, it forms query tokens from target-ray embeddings only. A Transformer maps the multi-view input tokens to target tokens, which are linearly decoded and unpatchified to produce the target image. This design keeps the model geometry-aware through rays, while avoiding explicit 3D volumes or meshes or analytical rendering equations, leading to the `minimal 3D inductive bias'.
+
+
+\subsubsection{Overall}
+LVSM is trained end-to-end with standard image reconstruction losses. LVSM demonstrates that large Transformers with ray conditioning can achieve strong photorealistic NVS without committing to a specific explicit 3D representation, but it still relies on posed multi-view supervision and can struggle under extreme extrapolation or out-of-distribution camera or image settings.
+
+
+\subsection{RayZer}
+
+Unfortunately, despite their strong generalization at test time, recent ``general'' 3D models such as DUSt3R, VGGT, and LVSM are still largely trained in a supervised manner, relying heavily on large-scale labeled multi-view data such as the depth or geometry annotations or posed image sets. This dependence is becoming a practical bottleneck: high-quality 3D supervision is expensive to obtain, and the available labeled datasets are being rapidly exhausted, which can slow further progress. Moreover, a non-trivial portion of the training signal in current pipelines is derived from SfM systems such as COLMAP, providing only approximate camera calibration and poses. These pseudo-labels can be noisy or biased, and imperfect geometry or camera supervision may even be detrimental by encouraging the model to fit inconsistent labels rather than learn robust geometric priors. And currently the general foundation models are trained almost on all the labeled dataset that is available.
+
+These limitations motivate a shift toward weaker and unsupervised learning objectives, where the model can infer the missing labels such as cameras, correspondences, and latent 3D structure from raw image collections. Enabling models to self-discover reliable geometric supervision from data is therefore crucial for scaling beyond curated 3D datasets and for improving robustness in truly unconstrained settings.
+
+\subsubsection{Architecture}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/rayzer2.png}
+    \caption{RayZer training pipeline with camera estimation and ray-conditioned rendering. RayZer first predicts camera poses/intrinsics and per-image Pl\"ucker ray maps, reconstructs latent scene tokens from posed input views, and renders target views by decoding along predicted target rays. The model is trained end-to-end with image reconstruction losses between rendered and ground-truth target views.}
+    \label{fig:rayzer2}
+\end{figure}
+
+As the RayZer's architecture shows in Fig. \ref{fig:rayzer2}, given an unposed set of images from the same scene, RayZer first predicts camera parameters for each image, converts them into dense per-pixel Pl\"ucker ray maps, and then learns to render a target view conditioned on the target rays and a latent scene representation. Training uses only image reconstruction losses between the rendered view and the ground-truth target image, encouraging the model to discover a camera scene decomposition that is useful for synthesis.
+
+RayZer follows a cascaded design:
+\begin{itemize}
+    \item a camera estimaton predicts per-view extrinsics, which relative to a reference view, and a simplified intrinsics model
+    \item the predicted cameras define Pl\"ucker ray maps that serve as pixel-aligned geometric conditioning
+    \item a latent scene reconstructor aggregates multi-view information into a compact set of scene tokens
+    \item a rendering decoder maps target-ray tokens and scene tokens to target RGB patches, which are then unpatchified to obtain the final image. Notably, the only explicit geometric prior injected into the network is the ray structure derived from the predicted cameras
+\end{itemize}
+
+\subsubsection{Unsupervised Learning Details}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{./Img/rayzer1.png}
+    \caption{RayZer high-level formulation: zero 3D supervision for novel view synthesis. Given a set of images, RayZer encodes them into a latent scene representation and jointly reasons about camera geometry, then decodes a target view without requiring explicit 3D labels (e.g., camera poses or scene geometry) during training.}
+    \label{fig:rayzer1}
+\end{figure}
+
+RayZer removes the need for any 3D labels, that is no goundtruth poses, intrinsics, depth or geometry by training purely through view reconstruction. As shown in Fig.~\ref{fig:rayzer1}, given an unposed image set from the same scene, it splits the images into two subsets: $\mathcal{J}_A$ as the context and $\mathcal{J}_B$ as the targets. The encoder uses $\mathcal{J}_A$ to build a latent scene representation, while simultaneously predicting camera parameters for all views. These predicted cameras are converted into dense per-pixel Pl\"ucker ray maps, which serve as the only explicit geometric conditioning. A rendering decoder then takes the scene latent together with the target-ray embeddings of $\mathcal{J}_B$ and synthesizes $\hat{\mathcal{J}}_B$. Training minimizes a purely image-based loss
+\begin{equation}
+\mathcal{L}(\mathcal{J}_B,\hat{\mathcal{J}}_B) = \frac{1}{|\mathcal{J}_B|}\sum_{I\in\mathcal{J}_B} \left(\mathrm{MSE}(I,\hat I) + \lambda\mathrm{Perceptual}(I,\hat I)\right),
+\end{equation}
+and gradients propagate through the entire pipeline, forcing the model to self-discover cameras and a 3D-aware scene latent that are jointly consistent for rendering. This directly addresses the scalability bottleneck of supervision-heavy pipelines and avoids being constrained by noisy SfM pseudo-labels.
+
+
+\subsubsection{Summary}
+RayZer provides a concrete path beyond pipelines without labeling: it shows that large view synthesis models can learn 3D-aware rendering directly from raw image collections by jointly learning cameras, rays, and a latent scene representation under self-supervision. This directly addresses the limitations of supervised general models and motivates further research on camera-free, label-free multi-view learning at scale.
+
+Conceptually, RayZer can be viewed as a synthesis of the key ideas from the previous models: it adopts a self-supervised without labeling learning objective to remove dependence on 3D annotations, while reusing a VGGT-style token-based multi-view aggregator (i.e. add camera and register tokens with attention) to fuse information across views. At the same time, it inherits LVSM's Pl\"ucker-ray conditioning as a minimal yet effective way to inject camera geometry into a Transformer-based renderer. In this sense, RayZer combines ``unsupervised learning + token-based multi-view reasoning + ray-based geometric conditioning'' into a unified framework for scalable novel view synthesis.
+
+
+\subsection{Overall}
+
+LVSM and RayZer illustrate a complementary route to general 3D vision that prioritizes photorealistic novel view synthesis with minimal explicit 3D inductive bias. Instead of committing to a handcrafted 3D representation such as volumes or Gaussian primitives and an analytical renderer, both methods formulate rendering as a learned, token-based mapping conditioned on ray geometry, where Pl\"ucker-ray embeddings provide a lightweight but expressive way to encode camera information. LVSM shows that, given posed multi-view supervision, a large Transformer can directly learn high-quality view synthesis in a feed-forward manner. RayZer pushes this paradigm further by removing 3D labels altogether and jointly learning cameras, a latent scene representation, and a ray-conditioned renderer under self-supervision. Together, these works suggest that ray-conditioned Transformers can serve as scalable, reusable backbones for view synthesis, while highlighting an emerging trade-off between minimizing explicit geometric constraints and maintaining strong consistency and robustness under challenging viewpoint extrapolation.

@@ -1,0 +1,39 @@
+\section{Conclusion}
+
+Across the four papers reviewed, we can see a clear and consistent message that general 3D vision is less about inventing a new scene representation, and more about amortizing multi-view reasoning into large pre-trained Transformers, while carefully choosing what geometric structure to expose to the model. The resulting design space can be cleanly summarized along three axes: supervision: what labels we assume, representation: what intermediate variables we predict, and the degree of explicit 3D inductive bias: how much hard geometry we require.
+
+NeRF and 3DGS show that ray-consistency with differentiable rendering is sufficient for high quality, but their per-scene optimization makes scalability the bottleneck. In contrast, DUSt3R and VGGT treat geometry as a feed-forward prediction problem: once trained, they run on new scenes without iterative solvers. The key conceptual shift is not just speed, it changes what the model learns. A model trained at scale can internalize a strong prior about geometry, so the network becomes a forward pass rather than a hand-designed pipeline.
+
+DUSt3R's pointmap is a great example that the intermediate variables is important: it is dense enough to support multiple downstream tasks (depth, matching, pose), yet simple enough to be regressed directly. VGGT appears even more brutally simple: add camera and register tokens, then repeatedly mix information with attention, and the model learns to output cameras and dense geometry. This suggests that the bottleneck has shifted from designing geometry modules to designing the information flow, i.e. how tokens communicate across views. In particular, alternating between global attention (cross-view exchange) and frame attention (per-view consolidation) looks like a learned analogue of match-and-fuse, which plausibly explains why such a seemingly plain architecture can work so well on VGGT.
+
+For novel view synthesis, geometry alone is not enough: wide-baseline extrapolation and real-world appearance require a strong prior beyond metric reconstruction. LVSM's key insight is that one can push photorealistic synthesis with minimal explicit 3D bias by conditioning a large Transformer on Pl\"ucker rays, i.e., providing a lightweight geometric interface without committing to a handcrafted 3D representation on LVSM. RayZer takes this further and, in my view, can be summarized as: self-supervised learning + VGGT-style token aggregation + LVSM-style Pl\"ucker-ray conditioning on RayZer. This combination is compelling because it keeps the geometry injection minimal, i.e. the rays, while letting the model learn the rest such as scene latent, rendering from data.
+
+A practical constraint emerges clearly: DUSt3R, VGGT, LVSM largely rely on supervised training with posed multi-view data. This creates two limitations. First, truly high-quality 3D labels do not scale indefinitely, so progress can become data-limited. Second, when supervision comes from SfM pipelines such as using COLMAP's predicted poses, the labels may be noisy or biased; fitting them too faithfully can mislead training and reduce robustness. RayZer directly attacks this problem by learning cameras and scene representations from image reconstruction alone, which I consider an essential direction if we want 3D foundation models to scale beyond curated 3D datasets on RayZer.
+
+Minimizing explicit 3D inductive bias improves flexibility, but it also weakens guarantees. A recurring trade-off is that strict projective ormetric consistency versus photorealism and generalization. Geometry-regression models may output shapes that are usable but not perfectly consistent under a single camera model; synthesis-first models may render convincingly but drift in geometry, especially under extreme viewpoint extrapolation or limited context.
+
+I see some concrete directions that follow naturally from the surveyed works: a better self-supervision signals matters: move beyond pure pixel or perceptual losses by incorporating multi-view cycle constraints, correspondence consistency, or uncertainty-aware training so the model can reject noisy pseudo-labels. The network could unify backbone for reconstruction and synthesis: use a shared multi-view aggregator that outputs both a geometry-centric state for controllability and an appearance-centric state for photorealism, with rays as the common interface. And self-supervised learning can be used to improve robustness: treat camera estimation not as a preprocessing step but as a learned, uncertainty-aware latent variable, so that models remain stable when real-world metadata is missing or inaccurate.
+
+Overall, DUSt3R and VGGT show that generalizable geometric reconstruction is feasible with feed-forward Transformers trained at scale, while LVSM and RayZer demonstrate that photorealistic synthesis can be achieved with minimal explicit 3D inductive bias by conditioning on rays. Taken together, these works suggest a promising recipe for 3D foundation models: token-based multi-view aggregation, ray-based geometric interfaces, and increasingly self-supervised learning to break the dependence on fragile or expensive 3D labels on all these introduced works. The following table is a summary of the four representative methods:
+
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{l l p{5cm} p{5cm}}
+\hline
+\textbf{Method} & Task & \textbf{Supervision / camera info} & \textbf{Representation} \\
+\hline
+DUSt3R \cite{Dust3r} & Recon. & 3D regression; Paired image relative camera labels & Pointmap (pixel-aligned 3D) + confidence \\
+
+VGGT \cite{Vggt} & Recon. & Multi-task supervised (cameras + dense geometry + tracks) & Multi-view tokens + dense heads (depth/pointmap) \\
+
+LVSM \cite{Lvsm} & NVS & Posed multi-view (pose-conditioned training/inference) & Pl\"ucker-ray-conditioned Transformer \\
+
+RayZer \cite{RayZer} & NVS & Self-supervised; cameras are self-estimated (no 3D labels) & Token aggregation + Pl\"ucker rays + latent scene tokens \\
+\hline
+\end{tabular}
+\caption{Compact comparison along supervision, representation.}
+\label{tab:comparison_compact}
+\end{table}

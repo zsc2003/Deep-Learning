@@ -1,0 +1,183 @@
+\section{Background and Preliminaries}
+
+For 3D computer vision tasks, most methods follow the same paradigm: multi-view images provide 2D observations of a shared 3D scene, and camera geometry maps pixels to 3D viewing rays. The goal is to infer scene structure and appearance that is consistent across views, enabling reconstruction and novel view synthesis under a unified ray-based formulation.
+
+\subsection{Problem Setting and Notation}
+
+We consider a set of $N$ images $\{I_i\}_{i=1}^{N}$ observing a static scene. For image $I_i$ with resolution $H_i \times W_i$, a pixel is denoted by $\mathbf{p}=(u,v)^{\top}$ and its homogeneous form by $\tilde{\mathbf{p}}=(u,v,1)^{\top}$. Under the pinhole camera model (Fig.~\ref{fig:ray}), each pixel corresponds to a unique viewing ray in 3D: intuitively, light travels from a 3D point through the optical center to the image plane.
+
+\begin{figure}[H]
+    \centering
+    \vspace{-0.2cm}
+    \includegraphics[width=0.7\textwidth]{./Img/ray.png}
+    \caption{Pinhole camera geometry: a pixel on the image plane of size $W\times H$ corresponds to a unique viewing direction, defining a ray that starts from the camera center and then passes through the pixel on the projection plane.}
+    \label{fig:ray}
+    \vspace{-0.2cm}
+\end{figure}
+
+The ray formulation makes explicit the two ingredients needed to relate a 2D measurement to 3D space. First, we must determine the ray direction in the camera coordinate system, which is governed by the camera intrinsics $K$. Second, we must express this ray in a world frame, which requires the camera extrinsics $(R,t)$. This decomposition motivates the following notation for intrinsics and extrinsics.
+
+\paragraph{Camera intrinsics.}
+The intrinsic matrix $K_i \in \mathbb{R}^{3\times 3}$ for the $i$-th image maps normalized camera coordinates to pixel coordinates, with parameters:
+\begin{equation}
+K_i = \begin{bmatrix}
+f_{x,i} & s_i & c_{x,i} \\
+0 & f_{y,i} & c_{y,i} \\
+0 & 0 & 1
+\end{bmatrix},
+\end{equation}
+where $(f_{x,i},f_{y,i})$ are focal lengths in pixel units, $(c_{x,i},c_{y,i})$ is the principal point, and $s_i$ is the skew. Using $K_i$, we can convert a pixel $\tilde{\mathbf{p}}$ into a direction on the normalized image plane (Fig.~\ref{fig:intrinsic}) via $K_i^{-1}\tilde{\mathbf{p}}$.
+
+\begin{figure}[H]
+    \centering
+    \vspace{-0.2cm}
+    \includegraphics[width=0.7\textwidth]{./Img/intrinsic.png}
+    \caption{The pinhole projection model and the normalized image plane. A 3D point is projected through the optical center onto the image plane; by factoring out focal length and principal point, one obtains normalized image coordinates that simplify ray back-projection.}
+    \label{fig:intrinsic}
+    \vspace{-0.2cm}
+\end{figure}
+
+\paragraph{Camera extrinsics and coordinate frames.}
+Let $\mathbf{X}^w \in \mathbb{R}^3$ denote a 3D point in the world coordinate system. Each camera $i$ is associated with extrinsics $(R_i,t_i)$ that transform world coordinates into camera coordinates (Fig.~\ref{fig:extrinsic}):
+\begin{equation}
+\mathbf{X}^c_i = R_i\mathbf{X}^w + t_i,\quad R_i\in SO(3),t_i\in \mathbb{R}^3.
+\end{equation}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{./Img/extrinsic.png}
+    \caption{Coordinate frames and camera extrinsics. The camera coordinate system is related to the world coordinate system by a rigid transform $(R,t)$; together with intrinsics $K$, this defines the mapping between 3D world points and 2D image measurements.}
+    \label{fig:extrinsic}
+\end{figure}
+
+Combine the camera intrinsics and extrinsics all together, a point in the world coordinate system can be expressed as a homogeneous point in the camera coordinate system via
+\begin{equation}
+\lambda\tilde{\mathbf{p}} = K_i[R_i|t_i]
+\begin{bmatrix}
+\mathbf{X}^w \\
+1
+\end{bmatrix},
+\end{equation}
+where $\lambda$ is the depth of the corresponding point.
+
+Accurate camera intrinsics and extrinsics are central to most multi-view 3D formulations: intrinsics determine how pixels map to viewing directions, while extrinsics align rays from different images into a shared 3D coordinate frame. When these parameters are know, or reliably estimated, the multi-view problem becomes one of finding a scene representation whose rendered projections along rays match the observed images.
+
+
+
+\subsection{Per-scene optimization}
+
+This ray-consistency principle underlies two influential per-scene optimization families: Neural Radiance Fields (NeRF~\cite{Nerf}) and 3D Gaussian Splatting~\cite{3dgs}. Both methods assume a posed image set and optimize a scene-specific representation so that rendering from each camera reproduces the corresponding view, yielding high-fidelity novel view synthesis, with given camera intrinsics and extrinsics.
+
+\subsubsection{NeRF: Neural Radiance Fields}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/nerf1.png}
+    \caption{Per-scene optimization pipeline of NeRF. Given posed input images, NeRF optimizes a scene-specific radiance field by enforcing photometric consistency, enabling high-quality rendering from novel viewpoints.}
+    \label{fig:nerf1}
+\end{figure}
+
+NeRF's follows a per-scene optimization pipeline (Fig.~\ref{fig:nerf1}): given a set of posed multi-view images(known cameras' intrinsic and extrinsics), rays are sampled from the input views, rendered through the current radiance field, and compared against ground-truth pixel colors using a rendering loss; gradients are backpropagated through the volume rendering equation to update $\theta$. After convergence, the learned radiance field can synthesize photorealistic novel views from unseen camera poses within the same scene. This formulation yields high-quality results, but it typically requires optimizing a separate model for each scene and relies on accurate camera calibration and pose estimation.
+
+
+For details, NeRF models a scene as a continuous radiance field parameterized by a neural network(Fig.~\ref{fig:nerf2}). Concretely, an MLP $F_{\theta}$ takes as input a 3D location $\mathbf{x}\in\mathbb{R}^{3}$ and a 2D viewing direction $\mathbf{d}$, and outputs a volume density $\sigma(\mathbf{x})$ together with a
+view-dependent color $\mathbf{c}(\mathbf{x},\mathbf{d})$.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/nerf2.png}
+    \caption{NeRF parameterization and training objective. An MLP takes 5D coordinates (3D position and viewing direction) as input and predicts color and density; differentiable volume rendering produces pixel colors that are matched to ground-truth images with a rendering loss.}
+    \label{fig:nerf2}
+\end{figure}
+
+To render a pixel, NeRF casts the corresponding camera ray and samples a set of points along it; the network predictions $(\sigma_i,\mathbf{c}_i)$ at these samples are then composited via differentiable volume rendering, where density determines the transmittance/opacity and colors are accumulated to form the final pixel value (Fig.~\ref{fig:volume_rendering}).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.3\textwidth]{./Img/volume_rendering.png}
+    \caption{NeRF volume rendering along a camera ray. Points are sampled on a viewing ray and mapped to density $\sigma_i$ and color $\mathbf{c}_i$; these samples are composited to produce the final pixel color via volumetric integration.}
+    \label{fig:volume_rendering}
+\end{figure}
+
+For details, a camera ray parameterized as
+\begin{equation}
+\mathbf{r}(t) = \mathbf{o} + t \mathbf{d}, \qquad t \in [t_n, t_f],
+\end{equation}
+With NeRF's network's outputs volume density $\sigma(\mathbf{x})$ and a view-dependent color
+$\mathbf{c}(\mathbf{x},\mathbf{d})$ and the background color $\mathbf{c}_{\mathrm{bg}}$. The rendered pixel color along the ray is:
+\begin{equation}
+\mathbf{C}(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t),\mathbf{d}) \dt + T(t_f) \mathbf{c}_{\mathrm{bg}},
+\end{equation}
+where $T(t)$ is the accumulated transmittance (probability that the ray has not terminated before $t$),
+\begin{equation}
+T(t) = \exp\!\left(-\int_{t_n}^{t} \sigma(\mathbf{r}(s)) \ds\right).
+\end{equation}
+
+In practice, NeRF uses a discrete approximation with samples $\{t_i\}_{i=1}^{N}$ along the ray and intervals
+$\delta_i = t_{i+1}-t_i$. Let $\sigma_i = \sigma(\mathbf{r}(t_i))$ and $\mathbf{c}_i=\mathbf{c}(\mathbf{r}(t_i),\mathbf{d})$.
+Define
+\begin{equation}
+\alpha_i = 1 - \exp(-\sigma_i \delta_i), \qquad T_i = \exp\left(-\sum_{j=1}^{i-1}\sigma_j \delta_j\right) = \prod_{j=1}^{i-1}(1-\alpha_j).
+\end{equation}
+Then the rendered color is
+\begin{equation}
+\mathbf{C}(\mathbf{r}) \approx \sum_{i=1}^{N} T_i \alpha_i \mathbf{c}_i  +  T_{N+1} \mathbf{c}_{\mathrm{bg}}, \qquad T_{N+1} = \exp\left(-\sum_{j=1}^{N}\sigma_j \delta_j\right).
+\end{equation}
+
+
+\subsubsection{3D Gaussian Splatting}
+
+NeRF and its subsequent methods share a common principle: given posed multi-view images, optimize a scene representation \textbf{implicitly} so that differentiable rendering reproduces the observations. Which cause to a significantly high computational complexity while rendering. Thus, 3D Gaussian Splatting adopts an \textbf{explicit} collection of 3D Gaussians rendered by differentiable splatting or rasterization, significantly improving efficiency without changing the overall per-scene optimization paradigm.
+
+3D Gaussian Splatting (3DGS) represents a scene as an explicit set of 3D Gaussian primitives. Each Gaussian typically carries a 3D mean, a covariance (or scale and orientation) controlling its spatial extent, an opacity, and appearance parameters (e.g., color or learned features). Compared to NeRF's implicit volumetric field, 3DGS adopts a more graphics-friendly, explicit representation: for a given camera view, Gaussians are projected onto the image plane as 2D elliptical splats and composited via a differentiable rasterizer to produce the final rendering. Fig.~\ref{fig:gaussian_ball} is an example to show how 3DGS can explicitly represent a scene.
+
+\begin{figure}[H]
+    \centering
+    \vspace{-0.5cm}
+    \includegraphics[width=0.5\textwidth]{./Img/gaussian_ball.png}
+    \vspace{-0.3cm}
+    \caption{3D Gaussian Splatting scene representation. A scene is modeled as a set of 3D Gaussians; the visualization shows the correspondence between the photorealistic rendering and the underlying Gaussian primitives (up/lower parts).}
+    \label{fig:gaussian_ball}
+    \vspace{-0.3cm}
+\end{figure}
+
+In practice, 3DGS is commonly trained in a per-scene optimization regime(Fig.~\ref{fig:gaussian1}). As illustrated by the pipeline, a structure-from-motion (SfM) system provides camera poses and sparse points to initialize the Gaussian set. The Gaussians are then optimized by minimizing an image reconstruction objective: rendered images from the current Gaussian representation are matched to posed multi-view observations, and gradients are backpropagated through the differentiable rasterization process to update both geometry and appearance parameters.
+
+\begin{figure}[H]
+    \centering
+    \vspace{-0.4cm}
+    \includegraphics[width=\textwidth]{./Img/gaussian1.png}
+    \vspace{-0.3cm}
+    \caption{Per-scene optimization pipeline of 3D Gaussian Splatting. Sparse SfM points initialize 3D Gaussians, which are optimized under differentiable rasterization: projections to the image plane and density control enable efficient training and rendering.}
+    \label{fig:gaussian1}
+    \vspace{-0.3cm}
+\end{figure}
+
+3D Gaussian Splatting models a scene as an explicit set of 3D Gaussian primitives,
+\begin{equation}
+\mathcal{G}=\{(\boldsymbol{\mu}_i,\Sigma_i,\alpha_i,\mathbf{c}_i)\}_{i=1}^{N},
+\end{equation}
+where $\boldsymbol{\mu}_i\in\mathbb{R}^3$ is the Gaussian mean to represent position, $\Sigma_i$ encodes its 3D shape and orientation, $\alpha_i$ is an opacity parameter, and $\mathbf{c}_i$ denotes color or learned appearance features. Rendering proceeds by projecting each 3D Gaussian into screen space under a camera with matrix $M$.
+Let $\Pi(\cdot)$ be the perspective projection and $J_i$ the Jacobian of $\Pi$ at $\boldsymbol{\mu}_i$.
+The projected mean and covariance can be written as
+\begin{equation}
+\boldsymbol{\mu}'_i=\Pi(M\boldsymbol{\mu}_i), \qquad \Sigma'_i = J_iM\Sigma_iM^{\top} J_i^{\top}
+\end{equation}
+Each projected Gaussian contributes a 2D elliptical weight at pixel location $\mathbf{p}$:
+\begin{equation}
+G_i(\mathbf{p})=\exp\!\left(-\tfrac{1}{2}(\mathbf{p}-\boldsymbol{\mu}'_i)^{\top}{\Sigma'_i}^{-1}(\mathbf{p}-\boldsymbol{\mu}'_i)\right).
+\end{equation}
+Using front-to-back compositing, the effective alpha at $\mathbf{p}$ is typically expressed as $\tilde{\alpha}_i(\mathbf{p})=\alpha_iG_i(\mathbf{p})$, and the rendered color is
+\begin{equation}
+\mathbf{C}(\mathbf{p}) = \sum_i T_i(\mathbf{p})\tilde{\alpha}_i(\mathbf{p})\mathbf{c}_i, \qquad T_i(\mathbf{p})=\prod_{j<i}\left(1-\tilde{\alpha}_j(\mathbf{p})\right),
+\end{equation}
+
+A key component enabling high quality under limited compute is adaptive density control(Fig.~\ref{fig:gaussian2}). During training, the method dynamically increases capacity where necessary by cloning or splitting Gaussians in regions that require finer detail, while pruning or regularizing redundant primitives. This strategy refines the representation over time and helps balance rendering quality and efficiency.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{./Img/gaussian2.png}
+    \caption{Adaptive density control in 3D Gaussian Splatting. During optimization, Gaussians are cloned or split to increase representational capacity where needed, improving reconstruction quality while maintaining efficiency.}
+    \label{fig:gaussian2}
+\end{figure}
+
+Overall, 3DGS offers fast training and real-time rendering potential, but it still relies on accurate camera poses and typically requires optimizing a separate representation for each new scene, motivating the shift toward generalizable 3D foundation models.

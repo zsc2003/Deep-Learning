@@ -1,0 +1,130 @@
+\section{Generalizable Geometric Reconstruction}
+
+While NeRF and 3D Gaussian Splatting demonstrate that photometric consistency under differentiable rendering can produce high-fidelity 3D representations, they fundamentally operate in a per-scene optimization regime. In practice, each new scene requires its own optimization, and performance depends heavily on accurate camera calibration and poses. These constraints limit scalability: the computational cost grows with the number of scenes, and robustness can degrade when camera metadata is noisy, incomplete, or unavailable.
+
+This motivates a different objective: generalizable geometric reconstruction, where a model is trained once on large-scale data and then applied to unseen scenes via a single forward pass or minimal adaptation. Such general models amortize the cost of 3D inference across scenes, enabling efficient deployment at scale. They can also leverage diverse training distributions to learn transferable priors, improving robustness in different settings. Also, these methods treat reconstruction as data-driven inference rather than a per-scene fitting, they open the door to reduced reliance on carefully engineered pipelines. With this perspective, we next review two representative approaches DUSt3R and VGGT that exemplify the recent move toward generalizable geometric reconstruction.
+
+
+\subsection{DUSt3R}
+
+Classical 3D reconstruction typically follows a multi-stage structure from motion(SfM) or multiview stereo(MVS) pipeline: feature matching, minimal solvers, triangulation, pose estimation, and dense reconstruction. This sequential design has errors accumulation across stages, and the entire pipeline depends critically on accurate camera intrinsics and extrinsics, which are often unavailable or noisy in unconstrained photo collections. DUSt3R(\underline{D}ense and \underline{U}nconstrained \underline{St}ereo \underline{3}D \underline{R}econstruction) proposes to invert this dependency: instead of first recovering cameras to enable triangulation, it directly regresses a dense 3D representation from image pairs without requiring calibration or known poses.(Fig~\ref{fig:dust3r_foundation})
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/dust3r_foundation.png}
+    \caption{DUSt3R overview: from unconstrained image collections to dense pointmaps. DUSt3R predicts view-consistent pointmaps from uncalibrated, unposed images, enabling a range of downstream geometric tasks such as depth estimation, correspondence matching, camera calibration, pose estimation, and dense 3D reconstruction.}
+    \label{fig:dust3r_foundation}
+\end{figure}
+
+
+\subsubsection{DUST3R's pipeline}
+DUSt3R introduces pointmaps as its core output. A pointmap is a dense 2D field of 3D points
+\begin{equation}
+\mathbf{X} \in \mathbb{R}^{W \times H \times 3},
+\end{equation}
+in one-to-one correspondence with image pixels, i.e., $I_{i,j} \leftrightarrow \mathbf{X}_{i,j}$.
+When camera intrinsics $\mathbf{K}$ and depth $D$ are available (e.g., for supervision), the pointmap in the camera frame can be written as
+\begin{equation}
+\mathbf{X}_{i,j} = \mathbf{K}^{-1}[iD_{i,j}, jD_{i,j}, D_{i,j}]^{\top}.
+\end{equation}
+For two views $n,m$, the same underlying geometry can be expressed across coordinate frames via
+\begin{equation}
+\mathbf{X}_{n,m} = \mathbf{P}_m \mathbf{P}_n^{-1} h(\mathbf{X}_n),
+\end{equation}
+where $\mathbf{P}$ denotes a world-to-camera pose and $h(\cdot)$ converts points to homogeneous coordinates. DUSt3R leverages this view-coupled nature of pointmaps, but crucially does \emph{not} require $\mathbf{K}$ or $\mathbf{P}$ at inference time.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/dust3r1.png}
+    \caption{DUSt3R architecture and pointmap prediction in a common frame. A ViT encoder extracts features from an image pair, followed by Transformer decoders with cross-view information exchange and regression heads that output pointmaps and per-pixel confidence maps. Both predicted pointmaps are expressed in the coordinate frame of the first camera, enabling direct alignment without requiring known camera poses.}
+    \label{fig:dust3r}
+\end{figure}
+
+For its network(Fig~\ref{fig:dust3r}), given two RGB images $(I_1, I_2)$, DUSt3R predicts two pointmaps and confidence maps
+\begin{equation}
+(I_1, I_2)\mapsto (\mathbf{X}_{1,1}, \mathbf{C}_{1,1}), (\mathbf{X}_{2,1}, \mathbf{C}_{2,1}),
+\end{equation}
+where both pointmaps are expressed in a common coordinate frame tied to the first image, i.e. regard $I_1$ as the canonical space. This design relaxes strict projective constraints and allows the model to encode the pixel-to-3D mapping and inter-view relations directly in its outputs.
+
+For the architectural, DUSt3R uses a ViT encoder with shared weights to embed both images into token features, followed by two Transformer decoders that repeatedly exchange information through cross-attention. Two regression heads then output dense pointmaps and per-pixel confidence scores. The architecture is inspired by CroCo\cite{croco}-style cross-view completion, enabling effective use of strong Transformer pretraining.
+
+
+
+\subsubsection{Training objective}
+DUSt3R's training is fully supervised with a simple 3D regression loss. Because the predicted reconstruction is scale-ambiguous, DUSt3R normalizes both prediction and ground truth by global scale factors. Let $\mathcal{D}_v$ be the set of valid pixels in view $v\in\{1,2\}$, and define the normalization
+\begin{equation}
+\mathrm{norm}(\mathbf{X}_1,\mathbf{X}_2) = \frac{1}{|\mathcal{D}_1|+|\mathcal{D}_2|} \sum_{v\in\{1,2\}}\sum_{i\in\mathcal{D}_v} \|\mathbf{X}_{v,i}\|.
+\end{equation}
+Then the per-pixel regression term is
+\begin{equation}
+\ell_{\mathrm{regr}}(v,i) = \left\| \frac{1}{z}\mathbf{X}_{v,1,i} - \frac{1}{\bar z}\bar{\mathbf{X}}_{v,1,i}
+\right\|,
+\end{equation}
+where $z=\mathrm{norm}(\mathbf{X}_{1,1},\mathbf{X}_{2,1})$ and $\bar z=\mathrm{norm}(\bar{\mathbf{X}}_{1,1},\bar{\mathbf{X}}_{2,1})$.
+To handle ill-defined regions and varying difficulty, DUSt3R predicts confidence $\mathbf{C}$ and optimizes a confidence-weighted objective
+\begin{equation}
+\mathcal{L}_{\mathrm{conf}} = \sum_{v\in\{1,2\}} \sum_{i\in\mathcal{D}_v} \mathbf{C}_{v,1,i}\ell_{\mathrm{regr}}(v,i)-\alpha \log \mathbf{C}_{v,1,i},
+\end{equation}
+
+
+\subsubsection{From pointmaps to geometric tasks}
+The predicted pointmaps are rich enough to support multiple downstream tasks with minimal extra machinery:
+\begin{itemize}
+    \item Depth: can be read from the $z$-coordinate of the pointmap in each view.
+    \item Dense correspondences: can be obtained by nearest-neighbor search in 3D pointmap space, optionally keeping mutual matches for robustness.
+    \item Intrinsics: can be estimated by fitting a focal length under mild assumptions: centered principal point, square pixels.
+    \item Relative pose: can be recovered via alignment between pointmaps, or more robustly via RANSAC PnP~\cite{ransac}.
+\end{itemize}
+
+Importantly, these quantities requires only a single feed-forward model rather than prerequisites for reconstruction.
+
+
+\subsubsection{Summary}
+DUSt3R is the first to push 3D vision from a per-scene geometric-optimization paradigm to a general inference paradigm: by training a generic Transformer at scale with a simple 3D regression objective, it amortizes geometric reasoning into the network, enabling direct operation on uncalibrated, unposed photo collections without re-running a full SfM/MVS optimization for each scene.
+
+
+
+\subsection{VGGT}
+While DUSt3R operates primarily on image pairs and typically relies on additional post-processing to fuse many views into a coherent reconstruction, which becomes a bottleneck when the number of images grows and when global consistency is required. VGGT(\underline{V}isual \underline{G}eometry \underline{G}rounded \underline{T}ransformer) takes the next step: it aims to predict all key 3D attributes of a scene from one to hundreds of views in a single feed-forward pass, significantly reducing reliance on geometric optimization while improving scalability and robustness in unconstrained settings.
+
+
+\subsubsection{Formulation}
+VGGT is a large feed-forward transformer trained on diverse 3D-annotated data to jointly infer multiple, interrelated 3D quantities for an image set. Given $N$ RGB images of the same scene, it directly predicts per-view camera parameters, depth maps, point maps, and dense features for point tracking in one forward pass:
+\begin{equation}
+f\left( (I_i)_{i=1}^{N} \right) = (g_i, D_i, P_i, T_i)_{i=1}^{N}.
+\end{equation}
+Here the notions are the rotation $g_i\in\mathbb{R}^9$, the translation $t\in\mathbb{R}^3$, the field-of-view $f\in\mathbb{R}^2$ (assuming the principal point at the image center); the depth $D_i\in\mathbb{R}^{H\times W}$; the dense pointmap $P_i\in\mathbb{R}^{3\times H\times W}$; and the dense tracking features used to recover point tracks $T_i$. Similar to DUSt3R, VGGT defines pointmaps in the coordinate system of the first camera as canonical space, which acts as the world reference frame, but it does not requires the point map for other representations in DUSt3R, but directly output the regression result by the network.
+
+
+\subsubsection{Architecture}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{./Img/vggt1.png}
+    \caption{VGGT pipeline for feed-forward multi-view geometry. Given a set of input images, VGGT extracts per-image tokens (e.g., via a ViT/DINO backbone), augments them with a camera token, and performs repeated global and frame-level attention to aggregate multi-view information. Task-specific heads then predict cameras and dense geometric outputs such as depth maps and point maps, as well as tracks for establishing correspondences across views.}
+    \label{fig:vggt1}
+\end{figure}
+
+VGGT's architectural(Fig.~\ref{fig:vggt1}) first patchifies each image into tokens using a DINOv2\cite{dinov2}-based visual encoder, then appends a \textbf{camera token} for camera prediction and several \textbf{register tokens} to stabilize and enrich global reasoning. The core backbone is a standard large transformer, but with a key modification called Alternating-Attention (AA): it alternates between frame-wise self-attention (attention within each image separately) and global self-attention (attention across tokens from all images jointly), repeated for $L$ layers (default $L=24$). Importantly, VGGT uses only self-attention, no explicit cross-attention, aiming for minimal handcrafted 3D inductive bias while still enabling strong multi-view fusion.
+
+
+With such architectural,VGGT is trained with a multi-task loss combining camera, depth, pointmap, and tracking supervision:
+\begin{equation}
+\mathcal{L} = \mathcal{L}_{\text{camera}} + \mathcal{L}_{\text{depth}} + \mathcal{L}_{\text{pmap}} + \lambda \mathcal{L}_{\text{track}},
+\quad \lambda=0.05,
+\end{equation}
+where depth/pointmap losses incorporate predicted uncertainty and also include gradient-based regularization (commonly used in depth estimation). To resolve global similarity ambiguities, the ground-truth data are expressed in the first-camera frame and scale-normalized using the average distance of scene points to the origin; unlike some prior work, VGGT does not necessarily normalize the network predictions during training, but instead trains the model to internalize the chosen canonicalization.
+
+
+\subsubsection{Summary}
+VGGT is designed to be fast and directly usable: it predicts cameras and geometry for many views in a feed-forward regime. Beyond reconstruction, the pretrained VGGT features are shown to transfer to downstream tasks such as point tracking and feed-forward novel view synthesis.
+
+VGGT is surprisingly `simple' on the surface: starting from strong visual tokens, it mainly adds camera and register tokens and relies on attention-based aggregation to predict cameras and dense geometry, without explicit geometric modules or iterative solvers. This simplicity suggests that much of multi-view reasoning can be amortized into a generic Transformer when trained at scale, and the main gain may come from the alternating attention pattern—global attention to exchange information across frames, followed by frame-wise attention. This design insight is also reflected in later work such as RayZer.
+
+
+
+\subsection{Overall}
+
+DUSt3R and VGGT mark an important step toward generalizable 3D vision: instead of solving geometry with hand-crafted pipelines or optimizing a separate NeRF or 3DGS for per-scene settings, they amortize multi-view reconstruction into a feed-forward Transformer trained at scale. DUSt3R is flexible and effective in the pairwise, unconstrained setting but often needs an additional global alignment stage to scale to many views, whereas VGGT performs direct multi-view aggregation and jointly predicts cameras and dense geometry in one pass, offering better scalability at the cost of a heavier multi-view model.
+
+Despite these advances, both methods still primarily rely on large amounts of labeled or pseudo-labeled geometric supervision (e.g., posed multi-view data with depth/points/poses) during training, indicating that the current generation of general 3D backbones remains largely within a supervised learning regime.

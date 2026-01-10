@@ -1,0 +1,16 @@
+\section{Proposed Scope and Methodology}
+I plan to structure my review around representative papers that define the current state of 3D foundation models. The analysis will be divided into two main categories:
+
+\subsection{Part 1: Generalizable Geometry Reconstruction}
+This section will focus on models that predict 3D structure (cameras, points, depth) directly from images.
+\begin{itemize}
+    \item \textbf{DUSt3R (CVPR 2024) \cite{Dust3r}:} I will analyze how this model reframes Multi-View Stereo (MVS) as a regression task, outputting dense 3D point maps directly without prior camera information.
+    \item \textbf{VGGT (CVPR 2025) \cite{Vggt}:} As an evolution of DUSt3R, I will discuss how VGGT introduces a scalable, feed-forward Transformer architecture that jointly estimates camera poses, depth, and point tracks for hundreds of images efficiently.
+\end{itemize}
+
+\subsection{Part 2: Generalizable View Synthesis}
+This section will explore how foundation models tackle Novel View Synthesis (NVS) for unseen scenes.
+\begin{itemize}
+    \item \textbf{LVSM (ICLR 2025) \cite{Lvsm}:} I will examine this "Large View Synthesis Model" to understand how it achieves high-quality rendering by treating synthesis as a data-driven prediction task rather than a physics-based rendering problem.
+    \item \textbf{RayZer (ICCV 2025) \cite{RayZer}:} I will review this work to highlight self-supervised learning approaches that address data scarcity in 3D training, enabling robust zero-shot generalization.
+\end{itemize}
